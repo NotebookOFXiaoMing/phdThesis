@@ -1,5 +1,19 @@
 ## 代码
 
+### megahit 组装
+```
+## fastp对原始数据进行过滤
+snakemake -s fastp.smk --cores 52 -p
+## megahit组装得到contigs
+sbatch run_megahit.slurm
+
+## megahit组装得到的contig id重新命名，在id里添加了样本名字
+snakemake -s renameMegahitOutout.smk --cores 52 -p
+
+conda activate quast 
+snakemake -s quast.smk --cores 52 -p
+```
+
 ### 提取没有比对上的序列
 
 ```
@@ -35,9 +49,14 @@ time ~/biotools/gclust/gclust -loadall -minlen 20 -both -nuc -threads 32 -ext 1 
 python cluster2fasta.py unalign_no2_merge.sorted.fa unalign.gclust.clu unalign.gclust.fa
 
 ~/biotools/EUPAN-v0.44/bin/eupan rmRedundant blastCluster -c 0.9 -t 32 unalign.gclust.fa selfblast /home/myan/biotools/EUPAN-v0.44/tools/ncbi-blast-2.2.28+/bin
+seqkit stats selfblast/non-redundant.fa
+
+## 121,240  100,064,379
 ```
 
 ### NT数据库进行比对
 ```
-python splitSeqs.py ../clusterRes_rep_seq.fasta 5000
+python splitSeqs.py ../05.gclust/selfblast/non-redundant.fa 5000
+snakemake -s blastnNT.smk --cores 96 -p
+
 ```
