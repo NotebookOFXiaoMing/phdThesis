@@ -57,6 +57,33 @@ seqkit stats selfblast/non-redundant.fa
 ### NT数据库进行比对
 ```
 python splitSeqs.py ../05.gclust/selfblast/non-redundant.fa 5000
+mkdir split.seqs
+mv seq* split.seqs
 snakemake -s blastnNT.smk --cores 96 -p
+snakemake -s getNonPlantTaxid.smk --cores 32 -p
 
+cat nonPlantTaxid/*.taxid | sort -u | wc -l # 53744
+cat nonPlantTaxid/*.taxid | sort -u > nonPlantTaxid.ids
+cd ../
+seqkit grep -r -v -f 06.blastn2NT/nonPlantTaxid.ids 05.gclust/selfblast/non-redundant.fa -o final.NonRefSeq.fa
+seqkit stats final.NonRefSeq.fa
+
+# 66,486  49,338,095 bp
+
+python renameNRSseqID.py final.NonRefSeq.fa final.NonRefSeq.rename.fa
+```
+
+### 使用酸石榴基因组构建的重复序列库进行重复序列注释
+
+```
+conda activate edta03
+RepeatMasker -e rmblast -pa 32 -qq -xsmall \
+-lib /data/myan/raw_data/pome/sour.pome/20231015.reanalysis/06.repeatModulerRepeatMaskerafterNextpolish/00.ys.rep.lib/ys-families.fa \
+/data/myan/raw_data/pome/pan.raw.fq/final.NonRefSeq.rename.fa -dir pomeNRS.repeatmasker
+```
+
+### 注释蛋白编码基因
+```
+conda activate galba
+time perl ~/biotools/GALBA-main/scripts/galba.pl --species=pomeNRS --genome=../07.repeatMasker/pomeNRS.repeatmasker/final.NonRefSeq.rename.fa.masked --prot_seq=all.six.Pome.peps --threads 32
 ```
