@@ -1,0 +1,2 @@
+bam: "/data/myan/raw_data/pome/pan.raw.fq/10.evm.proteinCodingGenes/02.transcriptome/02.merged.bam/NonRefSeq/merged.bam"
+ref: "/data/myan/raw_data/pome/pan.raw.fq/07.repeatMasker/pomeNRS.repeatmasker/final.{genome}.rename.fa.masked"

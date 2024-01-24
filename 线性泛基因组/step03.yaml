@@ -1,0 +1,2 @@
+ref: "/data/myan/raw_data/pome/pan.raw.fq/07.repeatMasker/pomeNRS.repeatmasker/final.{genome}.rename.fa.masked"
+prot: "/data/myan/raw_data/pome/sour.pome/20231015.reanalysis/08.proteinCodingGenes/homo.pep/{prot}.pep.fa"

@@ -1,0 +1,3 @@
+PROTEIN	miniprot	4
+TRANSCRIPT	transdecoder	8
+ABINITIO_PREDICTION Augustus 1

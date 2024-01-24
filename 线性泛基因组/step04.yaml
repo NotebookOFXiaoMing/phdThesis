@@ -1,0 +1,2 @@
+ref: "/data/myan/raw_data/pome/pan.raw.fq/07.repeatMasker/pomeNRS.repeatmasker/final.{genome}.rename.fa.masked"
+weights: "/data/myan/raw_data/pome/pan.raw.fq/10.evm.proteinCodingGenes/weights.txt"
