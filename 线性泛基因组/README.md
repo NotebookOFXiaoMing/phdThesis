@@ -86,4 +86,24 @@ RepeatMasker -e rmblast -pa 32 -qq -xsmall \
 ```
 conda activate galba
 time perl ~/biotools/GALBA-main/scripts/galba.pl --species=pomeNRS --genome=../07.repeatMasker/pomeNRS.repeatmasker/final.NonRefSeq.rename.fa.masked --prot_seq=all.six.Pome.peps --threads 32
+
+conda activate rnaseq
+snakemake -s genomeAnnotationStep01.smk --configfiles=step01.yaml --cores 64 -p
+
+conda activate braker2
+snakemake -s genomeAnnotationStep02.smk --configfiles=step02.yaml --cores 1 -p
+snakemake -s genomeAnnotationStep03.smk --configfile=step03.yaml --cores 48 -p
+
+snakemake -s genomeAnnotationStep03_04.smk --configfile=step04.yaml --cores 2 -p
+conda activate EVM
+snakemake -s genomeAnnotationStep04.smk --configfile=step04.yaml --cores 32 -p
+```
+
+
+### 检测SNP和InDel
+
+```
+# 单个基因组
+bwa index ../../../sour.pome/20231015.reanalysis/08.proteinCodingGenes/ys.final.masked.fna
+time snakemake -s bwaSamtoolsBcftools.smk --configfiles=config_SNP.yaml --cores 128 -p
 ```
