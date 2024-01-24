@@ -1,0 +1,5 @@
+fq:
+  r1: "/data/myan/raw_data/pome/pan.raw.fq/01.clean.fq/{sample}_1.fq.gz"
+  r2: "/data/myan/raw_data/pome/pan.raw.fq/01.clean.fq/{sample}_2.fq.gz"
+ref:
+  fa: "/data/myan/raw_data/pome/sour.pome/20231015.reanalysis/08.proteinCodingGenes/ys.final.masked.fna"
