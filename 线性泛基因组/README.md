@@ -99,6 +99,12 @@ conda activate EVM
 snakemake -s genomeAnnotationStep04.smk --configfile=step04.yaml --cores 32 -p
 ```
 
+### 蛋白编码基因功能注释
+```
+conda activate eggnogmapper
+time emapper.py -i ../05.evm/NonRefSeq/NonRefSeq.pep.fa -o NonRefSeq --cpu 24 -m diamond
+```
+
 
 ### 检测SNP和InDel
 
