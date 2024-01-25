@@ -112,4 +112,22 @@ time emapper.py -i ../05.evm/NonRefSeq/NonRefSeq.pep.fa -o NonRefSeq --cpu 24 -m
 # 单个基因组
 bwa index ../../../sour.pome/20231015.reanalysis/08.proteinCodingGenes/ys.final.masked.fna
 time snakemake -s bwaSamtoolsBcftools.smk --configfiles=config_SNP.yaml --cores 128 -p
+
+## 叶城酸石榴 加 非参考序列
+cat ../../../sour.pome/20231015.reanalysis/08.proteinCodingGenes/ys.final.masked.fna ../../07.repeatMasker/pomeNRS.repeatmasker/final.NonRefSeq.rename.fa.masked > ys.final.plus.nonRefSeq.masked.fna
+cat ../../../sour.pome/20231015.reanalysis/08.proteinCodingGenes/05.evm/ys/ys.rename.gff3 ../../10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.rename.gff3 > ys.final.plus.nonRefSeq.masked.gff3
+
+## 单个基因组加上非参考序列
+
+snakemake -s bwaSamtoolsBcftools.smk --configfiles=config_SNP.yaml --cores 32 -p
+```
+
+### 公共转录组数据
+
+```
+# 单个参考基因组
+conda activate rnaseq
+snakemake -s hisat2Stringtie.smk --configfiles=PRJNA360679.yaml --cores 64 -p
+snakemake -s hisat2Stringtie.smk --configfiles=PRJNA361285.yaml --cores 64 -p
+
 ```
