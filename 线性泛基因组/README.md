@@ -131,3 +131,15 @@ snakemake -s hisat2Stringtie.smk --configfiles=PRJNA360679.yaml --cores 64 -p
 snakemake -s hisat2Stringtie.smk --configfiles=PRJNA361285.yaml --cores 64 -p
 
 ```
+
+### 计算基因的覆盖度 生成基因存在缺失矩阵
+
+```
+## gff格式转换为gtf格式
+gffread ys.final.plus.nonRefSeq.masked.gff3 -T ys.final.plus.nonRefSeq.masked.tmp.gtf
+## gffread转换得到的gtf文件第三列没有gene 而是transcript,应该是有参数没有设置对，暂时找不到对应参数了 下面脚本改一下
+python changeGTF.py ys.final.plus.nonRefSeq.masked.tmp.gtf ys.final.plus.nonRefSeq.masked.gtf
+#~/biotools/software.package/EUPAN-v0.44/bin/ccov abcd.gtf 02.eupan.input.bam/Ch_BHYSZ.sorted/Ch_BHYSZ.sorted.bam > output.dir/data/Ch_BHYSZ.sorted/Ch_BHYSZ.sorted.sta
+snakemake -s geneANDcdsCOV.smk --cores 24 -p
+
+```
