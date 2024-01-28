@@ -102,7 +102,10 @@ snakemake -s genomeAnnotationStep04.smk --configfile=step04.yaml --cores 32 -p
 ### 蛋白编码基因功能注释
 ```
 conda activate eggnogmapper
+export EGGNOG_DATA_DIR=/home/myan/my_data/database/eggnog/
 time emapper.py -i ../05.evm/NonRefSeq/NonRefSeq.pep.fa -o NonRefSeq --cpu 24 -m diamond
+conda activate interproscan01
+interproscan.sh -i ../05.evm/NonRefSeq/NonRefSeq.pep.fa -f tsv --goterms -dp -cpu 24 -o NonRefSeq.pep.fa.interproscan
 ```
 
 
@@ -141,5 +144,16 @@ gffread ys.final.plus.nonRefSeq.masked.gff3 -T ys.final.plus.nonRefSeq.masked.tm
 python changeGTF.py ys.final.plus.nonRefSeq.masked.tmp.gtf ys.final.plus.nonRefSeq.masked.gtf
 #~/biotools/software.package/EUPAN-v0.44/bin/ccov abcd.gtf 02.eupan.input.bam/Ch_BHYSZ.sorted/Ch_BHYSZ.sorted.bam > output.dir/data/Ch_BHYSZ.sorted/Ch_BHYSZ.sorted.sta
 snakemake -s geneANDcdsCOV.smk --cores 24 -p
+#~/biotools/software.package/EUPAN-v0.44/bin/eupan geneCov -t 16 04.practice/ output.dir01 ys.final.plus.nonRefSeq.masked.gtf
 
+Rscript summary_geneCov.R
+Rscript summary_cdsCov.R
+
+library(tidyverse)
+gene.df<-read_tsv("summary_gene.cov")
+cds.df<-read_tsv("summary_cds.cov")
+identical(colnames(gene.df),colnames(cds.df))
+identical(gene.df$`#name`,cds.df$`#name`)
+
+~/biotools/software.package/EUPAN-v0.44/bin/eupan geneExist summary_gene.cov summary_cds.cov 0.8 0.95 > genePAV.matrix
 ```
