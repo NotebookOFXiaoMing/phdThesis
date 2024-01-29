@@ -157,3 +157,12 @@ identical(gene.df$`#name`,cds.df$`#name`)
 
 ~/biotools/software.package/EUPAN-v0.44/bin/eupan geneExist summary_gene.cov summary_cds.cov 0.8 0.95 > genePAV.matrix
 ```
+
+### coinfinder
+
+```
+### iqtree 进化树
+
+coinfinder -i coinfinder.geneinfo -p genePAV.matrix.phy.treefile -a
+
+```
