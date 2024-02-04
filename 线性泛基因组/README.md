@@ -166,3 +166,10 @@ identical(gene.df$`#name`,cds.df$`#name`)
 coinfinder -i coinfinder.geneinfo -p genePAV.matrix.phy.treefile -a
 
 ```
+
+### RGA 抗病基因类似物
+```
+conda activate interproscan01
+module load perl5/5.18.2-thread-multi
+
+```
