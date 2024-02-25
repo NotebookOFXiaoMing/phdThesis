@@ -19,3 +19,10 @@ http://47.96.249.172:16019/analyzer/view
 ```
 halign -t 2 downLoad.fa
 ```
+
+### 叶绿体基因组circos图
+
+http://47.96.249.172:16085/cpgview/drawmap
+
+170884098974144
+
