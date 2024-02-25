@@ -1,0 +1,257 @@
+1.
+Annotated protein coding genes:
+Group of genes                                  	Name of genes
+Subunits of ATP synthase                        	atpA, atpB, atpE, atpF, atpH, atpI
+Subunits of NADH-dehydrogenase            	ndhA, ndhB, ndhB_copy2, ndhC, ndhD, ndhE, ndhF, ndhG, ndhH, ndhI, ndhJ, ndhK
+Subunits of cytochrome b/f complex          	petA, petB, petD, petG, petL, petN
+Subunits of photosystem I                       	psaA, psaB, psaC, psaI, psaJ
+Subunits of photosystem II                      	psbA, psbB, psbC, psbD, psbE, psbF, psbH, psbI, psbJ, psbK, psbM, psbN, psbT, psbZ, ycf3
+Large subunit of ribosome                       	rpl14, rpl16, rpl2, rpl20, rpl22, rpl23, rpl23_copy2, rpl2_copy2, rpl32, rpl33, rpl36
+Small subunit of ribosome                       	rps11, rps12, rps12_copy2, rps14, rps15, rps16, rps18, rps19, rps2, rps3, rps4, rps7, rps7_copy2, rps8
+DNA dependent RNA polymerase              	rpoA, rpoB, rpoC1, rpoC2
+Subunit of rubisco                              	rbcL
+c-type cytochrom synthesis gene             	ccsA
+Envelop membrane protein                        	cemA
+Maturase                                              	matK
+Protease                                              	clpP
+Subunit of Acetyl-CoA-carboxylase           	accD
+Translational initiation factor             	None
+Conserved open reading frames             	ycf1, ycf2, ycf2_copy2, ycf4
+Other genes                                           	None
+
+Possible missing protein coding genes:
+Group of genes                                  	Name of genes
+Subunits of ATP synthase                        	None
+Subunits of NADH-dehydrogenase            	None
+Subunits of cytochrome b/f complex          	None
+Subunits of photosystem I                       	None
+Subunits of photosystem II                      	psbL
+Large subunit of ribosome                       	None
+Small subunit of ribosome                       	None
+DNA dependent RNA polymerase              	None
+Subunit of rubisco                              	None
+c-type cytochrom synthesis gene             	None
+Envelop membrane protein                        	None
+Maturase                                              	None
+Protease                                              	None
+Subunit of Acetyl-CoA-carboxylase           	None
+Translational initiation factor             	infA
+Conserved open reading frames             	ycf15
+Other genes                                           	None
+
+2.
+Multicopy genes with different lengths:
+Genes             	Length  	Location
+None              	None    	None
+
+3.
+Common intron-contained genes:
+Genes           	exons 	exon1 	exon2 	exon3
+atpF               	(2/2)     	[13745:13889](-)	[12576:12985](-)	
+clpP               	(3/3)     	[76721:76791](-)	[75618:75911](-)	[74785:75010](-)	
+ndhA               	(2/2)     	[126294:126846](-)	[124706:125244](-)	
+ndhB               	(2/2)     	[100203:100977](-)	[98762:99519](-)	
+ndhB_copy2    	(2/2)     	[146680:147454](+)	[148138:148895](+)	
+petB               	(2/2)     	[79610:79615](+)	[80395:81036](+)	
+petD               	(2/2)     	[81231:81238](+)	[82005:82479](+)	
+rpl16               	(2/2)     	[87429:87437](-)	[86036:86434](-)	
+rpl2               	(1/2)     	[89106:89930](-)	
+rpl2_copy2    	(1/2)     	[157727:158551](+)	
+rpoC1               	(2/2)     	[24274:24705](-)	[21917:23524](-)	
+rps12               	(3/3)     	[74515:74628](-)	[102390:102621](-)	[101818:101843](-)	
+rps12_copy2    	(3/3)     	[74515:74628](-)	[145036:145267](+)	[145814:145839](+)	
+rps16               	(2/2)     	[6230:6265](-)	[5144:5368](-)	
+ycf3               	(3/3)     	[47177:47300](-)	[46182:46411](-)	[45302:45454](-)	
+
+### The exon column shows the number of (actual exons/expected exons). ###
+
+
+4.
+Genes with internal stop codon:
+None
+
+5.
+Genes with nonstandard start codon:
+Genes             	Start codon
+rps19             	GTG
+ndhD              	AAT
+
+6.
+Genes with nonstandard stop codon:
+Genes             	Stop codon
+None              	None
+
+7. Conclusion
+This genome has 128 genes (110 unique genes). Including:
+83 protein-coding genes (77 are unique)
+37 tRNA genes (29 are unique)
+8 rRNA genes (4 are unique)
+
+Details are as follows:
+
+83 protein-coding genes (77 are unique)
+Genes             	Length  	Location
+accD              	1476    	[61227:62702](+)	
+atpA              	1524    	[10997:12520](-)	
+atpB              	1497    	[56758:58254](-)	
+atpE              	402     	[56360:56761](-)	
+atpF              	555     	[13745:13889](-)	[12576:12985](-)	
+atpH              	246     	[14403:14648](-)	
+atpI              	744     	[15692:16435](-)	
+ccsA              	960     	[119146:120105](+)	
+cemA              	693     	[65355:66047](+)	
+clpP              	591     	[76721:76791](-)	[75618:75911](-)	[74785:75010](-)	
+matK              	1500    	[2022:3521](-)	
+ndhA              	1092    	[126294:126846](-)	[124706:125244](-)	
+ndhB              	1533    	[100203:100977](-)	[98762:99519](-)	
+ndhB_copy2        	1533    	[146680:147454](+)	[148138:148895](+)	
+ndhC              	363     	[53488:53850](-)	
+ndhD              	1500    	[120473:121972](-)	
+ndhE              	306     	[122666:122971](-)	
+ndhF              	2250    	[114510:116759](-)	
+ndhG              	531     	[123186:123716](-)	
+ndhH              	1182    	[126848:128029](-)	
+ndhI              	498     	[124113:124610](-)	
+ndhJ              	477     	[52169:52645](-)	
+ndhK              	678     	[52757:53434](-)	
+petA              	963     	[66236:67198](+)	
+petB              	648     	[79610:79615](+)	[80395:81036](+)	
+petD              	483     	[81231:81238](+)	[82005:82479](+)	
+petG              	114     	[70546:70659](+)	
+petL              	96      	[70272:70367](+)	
+petN              	90      	[30023:30112](+)	
+psaA              	2253    	[42351:44603](-)	
+psaB              	2205    	[40121:42325](-)	
+psaC              	246     	[122131:122376](-)	
+psaI              	105     	[63374:63478](+)	
+psaJ              	135     	[71575:71709](+)	
+psbA              	1062    	[425:1486](-)	
+psbB              	1527    	[77199:78725](+)	
+psbC              	1422    	[36546:37967](+)	
+psbD              	1062    	[35537:36598](+)	
+psbE              	252     	[68657:68908](-)	
+psbF              	120     	[68528:68647](-)	
+psbH              	222     	[79250:79471](+)	
+psbI              	111     	[8675:8785](+)	
+psbJ              	123     	[68119:68241](-)	
+psbK              	180     	[8103:8282](+)	
+psbM              	105     	[31031:31135](-)	
+psbN              	132     	[79006:79137](-)	
+psbT              	108     	[78833:78940](+)	
+psbZ              	189     	[38617:38805](+)	
+rbcL              	1428    	[59010:60437](+)	
+rpl14             	369     	[85529:85897](-)	
+rpl16             	408     	[87429:87437](-)	[86036:86434](-)	
+rpl2              	825     	[89106:89930](-)	
+rpl20             	351     	[73378:73728](-)	
+rpl22             	471     	[88248:88718](-)	
+rpl23             	282     	[89949:90230](-)	
+rpl23_copy2       	282     	[157427:157708](+)	
+rpl2_copy2        	825     	[157727:158551](+)	
+rpl32             	174     	[117741:117914](+)	
+rpl33             	207     	[72219:72425](+)	
+rpl36             	114     	[84297:84410](-)	
+rpoA              	1014    	[82690:83703](-)	
+rpoB              	3213    	[24732:27944](-)	
+rpoC1             	2040    	[24274:24705](-)	[21917:23524](-)	
+rpoC2             	4170    	[17575:21744](-)	
+rps11             	417     	[83774:84190](-)	
+rps12             	372     	[74515:74628](-)	[102390:102621](-)	[101818:101843](-)	
+rps12_copy2       	372     	[74515:74628](-)	[145036:145267](+)	[145814:145839](+)	
+rps14             	303     	[39695:39997](-)	
+rps15             	273     	[128132:128404](-)	
+rps16             	261     	[6230:6265](-)	[5144:5368](-)	
+rps18             	306     	[72756:73061](+)	
+rps19             	279     	[88766:89044](-)	
+rps2              	711     	[16646:17356](-)	
+rps3              	657     	[87607:88263](-)	
+rps4              	606     	[48529:49134](-)	
+rps7              	468     	[101297:101764](-)	
+rps7_copy2        	468     	[145893:146360](+)	
+rps8              	405     	[84899:85303](-)	
+ycf1              	5631    	[128624:134254](-)	
+ycf2              	6921    	[90558:97478](+)	
+ycf2_copy2        	6921    	[150179:157099](-)	
+ycf3              	507     	[47177:47300](-)	[46182:46411](-)	[45302:45454](-)	
+ycf4              	555     	[63899:64453](+)	
+
+37 tRNA genes (29 are unique)
+Genes          	Location
+trnH-GUG       	[24:98](-)	
+trnK-UUU       	[4257:4293](-)	[1733:1767](-)	
+trnQ-UUG       	[7648:7719](-)	
+trnS-GCU       	[8935:9022](-)	
+trnG-UCC       	[9603:9625](+)	[10364:10411](+)	
+trnR-UCU       	[10541:10612](+)	
+trnC-GCA       	[29026:29096](+)	
+trnD-GUC       	[32306:32379](-)	
+trnY-GUA       	[32826:32909](-)	
+trnE-UUC       	[32969:33041](-)	
+trnT-GGU       	[34021:34092](+)	
+trnS-UGA       	[38189:38281](-)	
+trnG-GCC       	[39195:39265](+)	
+trnfM-CAU      	[39449:39522](-)	
+trnS-GCU_copy2 	[48139:48225](+)	
+trnT-UGU       	[49464:49536](-)	
+trnL-UAA       	[50392:50426](+)	[50944:50993](+)	
+trnF-GAA       	[51339:51411](+)	
+trnV-UAC       	[55803:55838](-)	[55163:55199](-)	
+trnM-CAU       	[56031:56103](+)	
+trnW-CCA       	[70786:70859](-)	
+trnP-UGG       	[71046:71119](-)	
+trnI-CAU       	[90396:90469](-)	
+trnL-CAA       	[98099:98179](-)	
+trnV-GAC       	[104504:104575](+)	
+trnI-GAU       	[106588:106624](+)	[107574:107608](+)	
+trnA-UGC       	[107673:107710](+)	[108514:108548](+)	
+trnR-ACG       	[112313:112386](+)	
+trnN-GUU       	[113014:113085](-)	
+trnL-UAG       	[118968:119047](+)	
+trnN-GUU_copy2 	[134572:134643](+)	
+trnR-ACG_copy2 	[135271:135344](-)	
+trnA-UGC_copy2 	[139947:139984](-)	[139109:139143](-)	
+trnI-GAU_copy2 	[141033:141069](-)	[140049:140083](-)	
+trnV-GAC_copy2 	[143082:143153](-)	
+trnL-CAA_copy2 	[149478:149558](+)	
+trnI-CAU_copy2 	[157188:157261](+)	
+
+8 rRNA genes (4 are unique)
+Genes          	Location
+rrn16S            	[104803:106293](+)	
+rrn23S            	[108701:111510](+)	
+rrn4.5S           	[111609:111711](+)	
+rrn5S             	[111936:112056](+)	
+rrn5S_copy2    	[135601:135721](-)	
+rrn4.5S_copy2  	[135946:136048](-)	
+rrn23S_copy2   	[136147:138956](-)	
+rrn16S_copy2   	[141364:142854](-)	
+
+This genome has 21 genes with intron(s).
+Details are as follows:
+
+17 gene(s) have 1 intron(s)
+Genes	Exons
+rps16	[6230:6265](-)	[5144:5368](-)	
+atpF	[13745:13889](-)	[12576:12985](-)	
+rpoC1	[24274:24705](-)	[21917:23524](-)	
+petB	[79610:79615](+)	[80395:81036](+)	
+petD	[81231:81238](+)	[82005:82479](+)	
+rpl16	[87429:87437](-)	[86036:86434](-)	
+ndhB	[100203:100977](-)	[98762:99519](-)	
+ndhA	[126294:126846](-)	[124706:125244](-)	
+ndhB_copy2	[146680:147454](+)	[148138:148895](+)	
+trnK-UUU	[4257:4293](-)	[1733:1767](-)	
+trnG-UCC	[9603:9625](+)	[10364:10411](+)	
+trnL-UAA	[50392:50426](+)	[50944:50993](+)	
+trnV-UAC	[55803:55838](-)	[55163:55199](-)	
+trnI-GAU	[106588:106624](+)	[107574:107608](+)	
+trnA-UGC	[107673:107710](+)	[108514:108548](+)	
+trnA-UGC_copy2	[139947:139984](-)	[139109:139143](-)	
+trnI-GAU_copy2	[141033:141069](-)	[140049:140083](-)	
+
+4 gene(s) have 2 intron(s)
+Genes	Exons
+rps12	[74515:74628](-)	[102390:102621](-)	[101818:101843](-)	
+ycf3	[47177:47300](-)	[46182:46411](-)	[45302:45454](-)	
+rps12_copy2	[74515:74628](-)	[145036:145267](+)	[145814:145839](+)	
+clpP	[76721:76791](-)	[75618:75911](-)	[74785:75010](-)	
