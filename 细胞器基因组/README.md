@@ -19,6 +19,35 @@ http://47.96.249.172:16019/analyzer/view
 ```
 time ~/anaconda3/envs/OrganelleGenome/bin/halign -t 2 downLoad.fa
 # downLoad.fa.aligned
+
+i = 1
+step = []
+
+while i < 161224:
+    step.append(i)
+    i += 1000
+
+for i in step:
+    fw = open("D:/Jupyter/panPome/细胞器基因组/叶绿体基因组滑窗/" + "window_" + str(i) + ".fa",'w' )
+    for rec in SeqIO.parse("D:/Jupyter/panPome/细胞器基因组/downLoad.fa.aligned",'fasta'):
+        fw.write(">%s\n%s\n"%(rec.id,str(rec.seq[i-1:i+2000])))
+    fw.close()
+
+library(ape)
+library(tidyverse)
+myfun<-function(x){
+  tmp.dna<-read.dna(x,format="fasta") 
+  
+  df<-data.frame(sample_name = str_extract(x,pattern = "[0-9]+") %>% as.numeric(),
+                 nuc_div=pegas::nuc.div(tmp.dna))
+  return(df)
+}
+list.files("D:/Jupyter/panPome/细胞器基因组/叶绿体基因组滑窗/",
+           pattern = "*.fa",
+           full.names = TRUE) %>% 
+  map(myfun) %>% 
+  bind_rows() %>% 
+  write_tsv("D:/Jupyter/panPome/细胞器基因组/cp.pi")
 ```
 
 
