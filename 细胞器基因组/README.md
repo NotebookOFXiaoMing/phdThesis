@@ -17,8 +17,10 @@ http://47.96.249.172:16019/analyzer/view
 ## 叶绿体基因组核苷酸多样性
 
 ```
-halign -t 2 downLoad.fa
+time ~/anaconda3/envs/OrganelleGenome/bin/halign -t 2 downLoad.fa
+# downLoad.fa.aligned
 ```
+
 
 ### 叶绿体基因组circos图
 
