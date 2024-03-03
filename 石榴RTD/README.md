@@ -4,6 +4,8 @@ https://github.com/wyguo/genotype_specific_RTD/tree/main
 
 https://github.com/anonconda/RTDmaker/tree/main
 
+https://github.com/maxecoulter/BaRT-2/tree/master
+
 ### 参考基因组构建索引
 
 ```
