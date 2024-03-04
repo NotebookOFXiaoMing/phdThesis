@@ -20,4 +20,24 @@ https://github.com/alexdobin/STAR/issues/379 需要先把文件解压
 
 ```
 snakemake -s starPassOne.smk --cores 128 -p
+cat 01.alignment/*/*SJ.out.tab | awk '($5 > 0 && $7 > 2 && $6==0)' | cut -f1-6 | sort | uniq > first.pass.SJ.out.tab
+```
+
+### 第二轮参考基因组构建索引
+
+```
+mkdir ref.index.second.pass
+time STAR --runThreadN 4 --runMode genomeGenerate --genomeDir ref.index.second.pass --genomeFastaFiles ref/pome.ref.nonref.fna --outFileNamePrefix pome --limitGenomeGenerateRAM 240000000000 --sjdbFileChrStartEnd first.pass.SJ.out.tab
+```
+
+### 第二轮比对
+
+```
+snakemake -s starPassTwo.smk --cores 128 -p
+```
+
+### stringtie组装转录本
+
+```
+snakemake -s stringtieSTAR.smk --cores 128 -p
 ```
