@@ -21,5 +21,5 @@ rule stringtie:
     shell:
         """
         stringtie {input} -o {output.gtf} -A {output.gene_abund} \
-        -a 5 -j 0.1 -f 0.3 -g 50 -M 1 -c 2.5 -p {threads}
+        -a 5 -j 0.1 -f 0.3 -g 50 -M 1 -c 2.5 -p {threads} --rf
         """
