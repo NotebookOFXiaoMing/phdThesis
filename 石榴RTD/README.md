@@ -6,6 +6,8 @@ https://github.com/anonconda/RTDmaker/tree/main
 
 https://github.com/maxecoulter/BaRT-2/tree/master
 
+https://github.com/cropgeeks/barleyPantranscriptome/tree/main
+
 ### 参考基因组构建索引
 
 ```
