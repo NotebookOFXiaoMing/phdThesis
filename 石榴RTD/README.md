@@ -40,4 +40,11 @@ snakemake -s starPassTwo.smk --cores 128 -p
 
 ```
 snakemake -s stringtieSTAR.smk --cores 128 -p
+snakemake -s cpGTFSJ.smk --cores 128 -p
+```
+
+### 运行RTDmaker
+
+```
+--outpath abcd --outname pome --prefix pome --SJ-reads 2 1 --tpm 0.1 1 --fragment-len 0.7 --antisense-len 0.5 --add intronic --keep intermediary --ram 8
 ```
