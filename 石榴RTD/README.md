@@ -48,5 +48,13 @@ snakemake -s cpGTFSJ.smk --cores 128 -p
 ### 运行RTDmaker
 
 ```
---outpath abcd --outname pome --prefix pome --SJ-reads 2 1 --tpm 0.1 1 --fragment-len 0.7 --antisense-len 0.5 --add intronic --keep intermediary --ram 8
+## 运行了8个多小时
+python ~/biotools/RTDmaker-main/RTDmaker.py ShortReads --assemblies 04.assemblies --references ref.gtf --SJ-data 04.SJdata --genome ref/pome.ref.nonref.fa --fastq clean.fastq --outpath pomeRTD --outname pome --prefix pomeRTD --SJ-reads 2 1 --tpm 0.1 1 --fragment-len 0.7 --antisense-len 0.5 --add intronic --keep intermediary --ram 8
+```
+
+### 运行transuite
+
+```
+python ~/biotools/TranSuite-main/transuite.py Auto --gtf pomeRTD/pome_RTDmaker_output/pome.gtf --fasta pomeRTD/pome_RTDmaker_output/pome.fa --outpath transuite.output --outname pome
+
 ```
