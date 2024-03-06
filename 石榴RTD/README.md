@@ -56,5 +56,13 @@ python ~/biotools/RTDmaker-main/RTDmaker.py ShortReads --assemblies 04.assemblie
 
 ```
 python ~/biotools/TranSuite-main/transuite.py Auto --gtf pomeRTD/pome_RTDmaker_output/pome.gtf --fasta pomeRTD/pome_RTDmaker_output/pome.fa --outpath transuite.output --outname pome
+```
 
+### salmon 转录本量化
+
+```
+salmon index -t ../pomeRTD/pome_RTDmaker_output/pome_padded.fa -k 31 -i pomeRTD_index -p 8
+
+## Jul25
+snakemake -s salmon_quant.smk --cores 128 -p
 ```
