@@ -58,6 +58,17 @@ python ~/biotools/RTDmaker-main/RTDmaker.py ShortReads --assemblies 04.assemblie
 python ~/biotools/TranSuite-main/transuite.py Auto --gtf pomeRTD/pome_RTDmaker_output/pome.gtf --fasta pomeRTD/pome_RTDmaker_output/pome.fa --outpath transuite.output --outname pome
 ```
 
+### 获取具有蛋白编码能力的基因的最长蛋白
+```
+python getLongestPEPfromPomeRTD.py transuite.output/pome_TranSuite_output/pome_transfeat/pome_transfeat.csv pomeRTDcoding.pep
+```
+### eggnog 蛋白功能注释
+
+```
+
+```
+
+
 ### salmon 转录本量化
 
 ```
