@@ -65,7 +65,15 @@ python getLongestPEPfromPomeRTD.py transuite.output/pome_TranSuite_output/pome_t
 ### eggnog 蛋白功能注释
 
 ```
+conda activate eggnogmapper
+export EGGNOG_DATA_DIR=/home/myan/my_data/database/eggnog/
+emapper.py -i ../pomeRTDcoding.pep -o pomeRTD --cpu 32 -m diamond --excel
+```
 
+### PH基因blast
+
+```
+makeblastdb -in ../pomeRTDcoding.pep -dbtype prot -title pomeRTD -parse_seqids -out pomeRTD
 ```
 
 
