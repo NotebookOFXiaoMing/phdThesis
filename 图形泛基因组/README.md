@@ -55,3 +55,64 @@ cat all.anno.exonic_variant_function | awk '{print $2}' | sort | uniq -c
 ~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq ../../merged92.indel.filter.recode.vcf > all.indel.vcf.annovar.input
 ~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort all.indel.vcf.annovar.input ~/my_data/raw_data/practice/annovar/
 ```
+
+### 基于基因组比对的Indels
+
+```
+python filterSyriVCFInDel.py bhagwa ../02.syri.output/bhagwa/bhagwa_syri.vcf bhagwa.InDels.vcf bhagwa.indel.len
+python filterSyriVCFInDel.py tunisia ../02.syri.output/tunisia/tunisia_syri.vcf tunisia.InDels.vcf tunisia.indel.len
+
+ls *.vcf > vcf.list
+SURVIVOR merge vcf.list 1000 0 1 1 1 0 merged.SURVIVOR.vcf
+
+## 数量
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%filter(str_sub(X3,1,3)=="INS")
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%filter(str_sub(X3,1,3)=="DEL")
+
+## 长度
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%filter(str_sub(X3,1,3)=="INS")%>%mutate(new_col=str_count(X5))%>%pull(new_col)%>%range()
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%filter(str_sub(X3,1,3)=="DEL")%>%mutate(new_col=str_count(X4))%>%pull(new_col)%>%range()
+## 按染色体统计
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%mutate(vartype=str_sub(X3,1,3))%>%select(X1,vartype) -> indel.count
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%mutate(vartype=str_sub(X3,1,3))%>%select(X1,vartype)%>%write_csv("indel.count.csv")
+
+dat<-read_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/indel.count.csv")
+## 分染色体数量的柱形图
+dat %>% 
+  group_by(X1,vartype) %>% 
+  summarise(value_count=n()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x=X1,y=value_count))+
+  geom_bar(stat="identity",aes(fill=vartype))
+
+dat %>% 
+  group_by(X1) %>% 
+  summarise(value_count=n()) %>%
+  ungroup()
+
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%filter(str_sub(X3,1,3)=="DEL")%>%mutate(new_col=str_count(X4))%>%pull(new_col)%>%write_lines("del.len")
+read_tsv("merged.SURVIVOR.vcf",col_names = FALSE,comment = "#")%>%filter(str_sub(X3,1,3)=="INS")%>%mutate(new_col=str_count(X5))%>%pull(new_col)%>%write_lines("ins.len")
+
+
+## 不同长度的插入缺失变异数量
+read_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/ins.len",
+         col_names = FALSE) %>% 
+  bind_rows(read_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/del.len",
+                     col_names = FALSE) ) %>% 
+  mutate(X2=case_when(
+    X1<=100 ~ "A",
+    X1>100 & X1<= 1000 ~ "B",
+    X1>1000 & X1 <= 10000 ~ "C",
+    X1> 10000 ~ "D"
+  )) %>% 
+  pull(X2) %>% table()
+
+70485/(70485+810+657+159)
+159/(70485+810+657+159)
+
+## 相对于基因位置的注释
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq merged.SURVIVOR.vcf > merged.SURVIVOR.annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort merged.SURVIVOR.annovar.input ~/my_data/raw_data/practice/annovar/
+cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+```
