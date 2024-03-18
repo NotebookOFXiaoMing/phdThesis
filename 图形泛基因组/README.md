@@ -224,7 +224,7 @@ for(i in 1:nrow(dat)){
     t() %>% 
     as.data.frame() %>% 
     rownames_to_column("V2") %>% 
-    mutate(V3=str_sub(V2,1,2)) %>% 
+    mutate(V3=str_sub(V2,1,2)) %>% # 提取样本名的前两位 Ti Ch
     filter(V1 != "./.") %>% 
     mutate(V4=case_when(
       V1 == "0/0" ~ "0",
@@ -296,4 +296,35 @@ mut1_freq_list %>%
   )) %>% 
   filter(pval.adj<=0.001) %>% 
   filter(nonTi<Ti)
+
+
+python favorableSVvcf.py sites.txt merged92.vg.filter.recode.vcf out.vcf
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq out.vcf > all.indel.vcf.annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort all.indel.vcf.annovar.input ~/my_data/raw_data/practice/annovar/
+cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+
+read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/有利变异位点all.anno.variant_function",
+         col_names = FALSE) %>% 
+  filter(X1=="upstream"|X1=="downstream"|X1=="exonic"|X1=="upstream;downstream") %>% 
+  pull(X2) %>% 
+  str_split(pattern = ",|;") %>% 
+  unlist() %>% 
+  str_replace(pattern = "\\(dist=[0-9]+\\)","") %>% 
+  unique() %>% 
+  paste("mRNA1",sep = ".")-> gene.list
+
+term2gene<-read_delim("D:/Jupyter/panPome/pomeTerm2Gene.txt",delim = "\t",col_names = FALSE)
+term2name<-read_delim("D:/Jupyter/panPome/go.tb",delim = "\t")
+
+
+enricher(gene = gene.list,
+         TERM2NAME = term2name,
+         TERM2GENE = term2gene,
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> enrich.dat
+
+enrich.dat@result %>% colnames()
+enrich.dat@result %>% 
+  select(-geneID)
 ```
