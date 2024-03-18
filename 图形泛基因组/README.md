@@ -116,3 +116,184 @@ read_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/ins.len",
 cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
 
 ```
+
+### 图形泛基因组合并92个样本的vcf
+
+```
+snakemake -s bgzip_vcf.smk --cores 24 -p
+vcftools --vcf merged.vcf --max-missing 0.8 --maf 0.05 --min-alleles 2 --max-alleles 2 --recode --recode-INFO-all --out merged92.vg.filter
+#2103
+```
+
+### 纯合有利变异
+
+```
+read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/merged92.vg.filter.recode.vcf",
+         comment = "##") %>% 
+  mutate(across(contains("_"),function(x){str_sub(x,1,3)})) -> dat
+
+mut2_freq_list<-list()
+for(i in 1:nrow(dat)){
+  print(i)
+  dat[i,] %>% select(-c(1:9)) %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    mutate(V3=str_sub(V2,1,2)) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V4=case_when(
+      V1 == "0/0" ~ "0",
+      V1 == "1/0" | V1 == "0/1" ~ "1",
+      V1 == "1/1" ~ "2"
+    ))%>% 
+    mutate(V5=case_when(
+      V3 == "Ti" ~ "Ti",
+      TRUE ~ "nonTi"
+    )) %>% 
+    group_by(V5,V4) %>% 
+    summarise(count=n()) %>% 
+    ungroup() %>% 
+    pivot_wider(names_from = V4,values_from = count) %>% 
+    pivot_longer(!V5,values_to = "count",names_to = "V4") %>% 
+    mutate(count=replace_na(count,0)) %>% 
+    filter(V4==0|V4==2) -> temp.dat
+    if(nrow(temp.dat)==4){
+      temp.dat %>% 
+        pivot_wider(names_from = "V4",values_from = "count") %>% 
+        column_to_rownames("V5") %>% 
+        fisher.test() %>% .$p.value -> pvalue
+      temp.dat %>% 
+        group_by(V5) %>% 
+        mutate(total=sum(count)) %>% 
+        ungroup() %>% 
+        mutate(freq=count/total) %>% 
+        filter(V4=="2") %>% 
+        select(V5,freq) %>% 
+        pivot_wider(values_from = freq,names_from = V5) %>% 
+        mutate(chrpos=paste(dat[i,1],dat[i,2],sep="_"),
+               pval=pvalue) -> mut2_freq_list[[i]]
+    }
+    
+
+}
+
+
+mut2_freq_list
+mut2_freq_list %>% 
+  bind_rows() %>% 
+  mutate(pval.adj=p.adjust(pval)) %>% 
+  mutate(group=case_when(
+    pval.adj > 0.001 ~ "A",
+    pval.adj <= 0.001 & pval.adj >= 1e-10 ~ "B",
+    pval.adj < 1e-10 ~ "D"
+  )) %>% 
+  ggplot(aes(x=nonTi,y=Ti))+
+  geom_point(aes(color=group))
+
+mut2_freq_list %>% 
+  bind_rows() %>% 
+  mutate(pval.adj=p.adjust(pval,method = "bonferroni")) %>% 
+  mutate(group=case_when(
+    pval > 0.001 ~ "A",
+    pval <= 0.001 & pval >= 1e-10 ~ "B",
+    pval < 1e-10 ~ "D"
+  )) %>% 
+  filter(pval.adj<=0.001) %>% 
+  filter(nonTi>Ti)
+
+mut2_freq_list %>% 
+  bind_rows() %>% 
+  mutate(pval.adj=p.adjust(pval,method = "bonferroni")) %>% 
+  mutate(group=case_when(
+    pval > 0.001 ~ "A",
+    pval <= 0.001 & pval >= 1e-10 ~ "B",
+    pval < 1e-10 ~ "D"
+  )) %>% 
+  filter(pval.adj<=0.001) %>% 
+  filter(nonTi<Ti)
+save(mut2_freq_list,file = "D:/Jupyter/panPome/Figures/结构变异图形泛基因组/mut2_freq_list.Rdata")
+```
+
+### 杂合
+
+```
+mut1_freq_list<-list()
+for(i in 1:nrow(dat)){
+  print(i)
+  dat[i,] %>% select(-c(1:9)) %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    mutate(V3=str_sub(V2,1,2)) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V4=case_when(
+      V1 == "0/0" ~ "0",
+      V1 == "1/0" | V1 == "0/1" ~ "1",
+      V1 == "1/1" ~ "2"
+    ))%>% 
+    mutate(V5=case_when(
+      V3 == "Ti" ~ "Ti",
+      TRUE ~ "nonTi"
+    )) %>% 
+    group_by(V5,V4) %>% 
+    summarise(count=n()) %>% 
+    ungroup() %>% 
+    pivot_wider(names_from = V4,values_from = count) %>% 
+    pivot_longer(!V5,values_to = "count",names_to = "V4") %>% 
+    mutate(count=replace_na(count,0)) %>% 
+    filter(V4==0|V4==1) -> temp.dat
+  if(nrow(temp.dat)==4){
+    temp.dat %>% 
+      pivot_wider(names_from = "V4",values_from = "count") %>% 
+      column_to_rownames("V5") %>% 
+      fisher.test() %>% .$p.value -> pvalue
+    temp.dat %>% 
+      group_by(V5) %>% 
+      mutate(total=sum(count)) %>% 
+      ungroup() %>% 
+      mutate(freq=count/total) %>% 
+      filter(V4=="1") %>% 
+      select(V5,freq) %>% 
+      pivot_wider(values_from = freq,names_from = V5) %>% 
+      mutate(chrpos=paste(dat[i,1],dat[i,2],sep="_"),
+             pval=pvalue) -> mut1_freq_list[[i]]
+  }
+  
+  
+}
+
+save(mut1_freq_list,file = "D:/Jupyter/panPome/Figures/结构变异图形泛基因组/mut1_freq_list.Rdata")
+mut1_freq_list %>% length()
+mut1_freq_list %>% 
+  bind_rows() %>% 
+  mutate(pval.adj=p.adjust(pval)) %>% 
+  mutate(group=case_when(
+    pval.adj > 0.001 ~ "A",
+    pval.adj <= 0.001 & pval.adj >= 1e-10 ~ "B",
+    pval.adj < 1e-10 ~ "D"
+  )) %>% 
+  ggplot(aes(x=nonTi,y=Ti))+
+  geom_point(aes(color=group))
+
+mut1_freq_list %>% 
+  bind_rows() %>% 
+  mutate(pval.adj=p.adjust(pval,method = "bonferroni")) %>% 
+  mutate(group=case_when(
+    pval > 0.001 ~ "A",
+    pval <= 0.001 & pval >= 1e-10 ~ "B",
+    pval < 1e-10 ~ "D"
+  )) %>% 
+  filter(pval.adj<=0.001) %>% 
+  filter(nonTi>Ti)
+
+mut1_freq_list %>% 
+  bind_rows() %>% 
+  mutate(pval.adj=p.adjust(pval,method = "bonferroni")) %>% 
+  mutate(group=case_when(
+    pval > 0.001 ~ "A",
+    pval <= 0.001 & pval >= 1e-10 ~ "B",
+    pval < 1e-10 ~ "D"
+  )) %>% 
+  filter(pval.adj<=0.001) %>% 
+  filter(nonTi<Ti)
+```
