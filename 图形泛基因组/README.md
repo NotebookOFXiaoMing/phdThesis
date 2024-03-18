@@ -328,3 +328,63 @@ enrich.dat@result %>% colnames()
 enrich.dat@result %>% 
   select(-geneID)
 ```
+
+### 表型数据整理
+
+```
+library(readxl)
+read_excel("D:/000博士毕业论文/表型数据/01.单果重.xlsx") %>% 
+  pull("重量") %>% summary()
+read_excel("D:/000博士毕业论文/表型数据/01.单果重.xlsx") %>% 
+  pull("重量") %>% sd()
+
+read_excel("D:/000博士毕业论b文/表型数据/04.百粒重.xlsx") %>%   
+  pull("百粒重") %>% summary()
+read_excel("D:/000博士毕业论文/表型数据/04.百粒重.xlsx") %>%   
+  pull("百粒重") %>% sd()
+
+read_excel("D:/000博士毕业论文/表型数据/03.果皮厚度mm.xlsx") %>% 
+  pull("果皮厚mm") %>% summary()
+read_excel("D:/000博士毕业论文/表型数据/03.果皮厚度mm.xlsx") %>%   
+  pull("果皮厚mm") %>% sd()
+
+read_excel("D:/000博士毕业论文/表型数据/05.籽粒硬度.xlsx")  %>% 
+  pull("kg/cm2") %>% summary()
+read_excel("D:/000博士毕业论文/表型数据/05.籽粒硬度.xlsx") %>%   
+  pull("kg/cm2") %>% sd()
+
+read_excel("D:/000博士毕业论文/表型数据/09.可滴定酸.xlsx") %>% 
+  pull("可滴定酸（%）") %>% summary()
+read_excel("D:/000博士毕业论文/表型数据/09.可滴定酸.xlsx") %>%   
+  pull("可滴定酸（%）") %>% sd()
+
+
+read_excel("D:/000博士毕业论文/表型数据/01.单果重.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(sf=mean(重量)) -> dat.A 
+
+read_excel("D:/000博士毕业论文/表型数据/04.百粒重.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(hgw=mean(百粒重)) -> dat.B
+
+read_excel("D:/000博士毕业论文/表型数据/03.果皮厚度mm.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(fst=mean(果皮厚mm)) -> dat.C
+
+read_excel("D:/000博士毕业论文/表型数据/05.籽粒硬度.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(gh=mean(`kg/cm2`))-> dat.D
+
+read_excel("D:/000博士毕业论文/表型数据/09.可滴定酸.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(ta=mean(`可滴定酸（%）`)) -> dat.E
+
+dat.A %>% 
+  left_join(dat.B,by=c("X1"="X1"))%>% 
+  left_join(dat.C,by=c("X1"="X1"))%>% 
+  left_join(dat.D,by=c("X1"="X1"))%>% 
+  left_join(dat.E,by=c("X1"="X1")) %>% 
+  ggpairs(data=.,columns = 2:6,
+          diag = list(continuous="densityDiag"))
+
+```
