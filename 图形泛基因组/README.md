@@ -600,4 +600,62 @@ ta_list %>% bind_rows() %>%
   filter(padj<0.05) %>% 
   dim()
 
+python ../../11.mergedvcf/favorableSVvcf.py SV_GWAS_sf_varSite.txt ../../11.mergedvcf/merged92.vg.filter.recode.vcf out.vcf
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq out.vcf > all.indel.vcf.annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort all.indel.vcf.annovar.input ~/my_data/raw_data/practice/annovar/
+cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+python ../../11.mergedvcf/favorableSVvcf.py SV_GWAS_hgw_varSite.txt ../../11.mergedvcf/merged92.vg.filter.recode.vcf out.vcf
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq out.vcf > all.indel.vcf.annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort all.indel.vcf.annovar.input ~/my_data/raw_data/practice/annovar/
+cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+
+ta_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  filter(padj<0.05) %>% 
+  pull(var_Site) %>% 
+  write_lines("D:/000博士毕业论文/表型数据/SV_GWAS_ta_varSite.txt")
+
+python ../../11.mergedvcf/favorableSVvcf.py SV_GWAS_ta_varSite.txt ../../11.mergedvcf/merged92.vg.filter.recode.vcf out.vcf
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq out.vcf > all.indel.vcf.annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort all.indel.vcf.annovar.input ~/my_data/raw_data/practice/annovar/
+cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+
+read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/单果重相关SV基因/all.anno.variant_function",
+         col_names = FALSE) %>% 
+  filter(X1=="upstream"|X1=="downstream"|X1=="exonic"|X1=="upstream;downstream") %>% 
+  pull(X2) %>% 
+  str_split(pattern = ",|;") %>% 
+  unlist() %>% 
+  str_replace(pattern = "\\(dist=[0-9]+\\)","") %>% 
+  unique() %>% 
+  paste("mRNA1",sep = ".") %>% 
+  as.data.frame() %>% 
+  rename("gene_name"=".") %>% 
+  left_join(read_tsv("D:/Jupyter/panPome/ys.emapper.annotations",
+                     comment = "##") %>% 
+              select(1,8),
+            by=c("gene_name"="#query")) %>% 
+  write_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/单果重相关SV基因/单果重基因功能注释.csv")
+
+
+read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/可滴定酸相关SV基因/all.anno.variant_function",
+         col_names = FALSE) %>% 
+  filter(X1=="upstream"|X1=="downstream"|X1=="exonic"|X1=="upstream;downstream") %>% 
+  pull(X2) %>% 
+  str_split(pattern = ",|;") %>% 
+  unlist() %>% 
+  str_replace(pattern = "\\(dist=[0-9]+\\)","") %>% 
+  unique() %>% 
+  paste("mRNA1",sep = ".") %>% 
+  as.data.frame() %>% 
+  rename("gene_name"=".") %>% 
+  left_join(read_tsv("D:/Jupyter/panPome/ys.emapper.annotations",
+                     comment = "##") %>% 
+              select(1,8),
+            by=c("gene_name"="#query")) %>% 
+  write_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/可滴定酸相关SV基因/可滴定酸基因功能注释.csv")
+
 ```
