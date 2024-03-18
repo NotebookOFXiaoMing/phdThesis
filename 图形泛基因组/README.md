@@ -575,4 +575,29 @@ ta_list %>% bind_rows() %>%
   mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
   write_csv("D:/000博士毕业论文/表型数据/结构变异GWAS可滴定酸.csv")
 
+sf_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>%
+  filter(padj<0.05) %>% 
+  dim()
+
+hgw_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  filter(padj<0.05) %>% 
+  dim()
+
+fst_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  filter(padj<0.05) %>% 
+  dim()
+
+gh_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>%
+  filter(padj<0.05) %>% 
+  dim()
+
+ta_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  filter(padj<0.05) %>% 
+  dim()
+
 ```
