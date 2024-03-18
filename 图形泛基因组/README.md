@@ -388,3 +388,191 @@ dat.A %>%
           diag = list(continuous="densityDiag"))
 
 ```
+
+### 结构变异的全基因组关联分析
+```
+read_excel("D:/000博士毕业论文/表型数据/01.单果重.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(sf=mean(重量)) -> dat.A 
+
+read_excel("D:/000博士毕业论文/表型数据/04.百粒重.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(hgw=mean(百粒重)) -> dat.B
+
+read_excel("D:/000博士毕业论文/表型数据/03.果皮厚度mm.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(fst=mean(果皮厚mm)) -> dat.C
+
+read_excel("D:/000博士毕业论文/表型数据/05.籽粒硬度.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(gh=mean(`kg/cm2`))-> dat.D
+
+read_excel("D:/000博士毕业论文/表型数据/09.可滴定酸.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(ta=mean(`可滴定酸（%）`)) -> dat.E
+
+dat.A %>% 
+  left_join(dat.B,by=c("X1"="X1"))%>% 
+  left_join(dat.C,by=c("X1"="X1"))%>% 
+  left_join(dat.D,by=c("X1"="X1"))%>% 
+  left_join(dat.E,by=c("X1"="X1")) %>% 
+  ggpairs(data=.,columns = 2:6,
+          diag = list(continuous="densityDiag"))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
+
+dat.A %>% 
+  left_join(dat.B,by=c("X1"="X1"))%>% 
+  left_join(dat.C,by=c("X1"="X1"))%>% 
+  left_join(dat.D,by=c("X1"="X1"))%>% 
+  left_join(dat.E,by=c("X1"="X1")) -> pheno.dat
+dat.A %>% 
+  left_join(dat.B,by=c("X1"="X1"))%>% 
+  left_join(dat.C,by=c("X1"="X1"))%>% 
+  left_join(dat.D,by=c("X1"="X1"))%>% 
+  left_join(dat.E,by=c("X1"="X1")) %>% 
+  pull(X1) -> pheno.sample.list
+
+read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/merged92.vg.filter.recode.vcf",
+         comment = "##") %>% 
+  mutate(across(contains("_"),function(x){str_sub(x,1,3)})) %>% 
+  select(-(3:9)) %>% 
+  mutate(varSite=paste(`#CHROM`,POS,sep="_")) %>% 
+  select(-c("#CHROM","POS")) %>% 
+  select(c("varSite",pheno.sample.list)) -> vcf.dat
+vcf.dat  
+pheno.dat %>% colnames()
+
+## 单果重
+sf_list<-list()
+for(i in 1:nrow(vcf.dat)){
+  vcf.dat[i,-1] %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    left_join(pheno.dat,by=c("V2"="X1")) %>% 
+    #filter_at(vars(contains("_")),any_vars(. != "./.")) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V1=case_when(
+      V1 == "0/0" ~ "0",
+      TRUE ~ "1"
+    )) -> temp.dat
+  if(length(temp.dat %>% pull(V1) %>% unique()) > 1){
+    temp.dat %>% 
+      wilcox.test(sf~V1,data = .) %>% 
+      .$p.value -> pvalue
+  }
+    sf_list[[i]]<- data.frame(var_Site=vcf.dat %>% pull(varSite) %>% .[i],
+                              pval=pvalue)
+}
+sf_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  write_csv("D:/000博士毕业论文/表型数据/结构变异GWAS单果重.csv")
+
+## 百粒重
+hgw_list<-list()
+for(i in 1:nrow(vcf.dat)){
+  vcf.dat[i,-1] %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    left_join(pheno.dat,by=c("V2"="X1")) %>% 
+    #filter_at(vars(contains("_")),any_vars(. != "./.")) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V1=case_when(
+      V1 == "0/0" ~ "0",
+      TRUE ~ "1"
+    )) -> temp.dat
+  if(length(temp.dat %>% pull(V1) %>% unique()) > 1){
+    temp.dat %>% 
+      wilcox.test(hgw~V1,data = .) %>% 
+      .$p.value -> pvalue
+  }
+  hgw_list[[i]]<- data.frame(var_Site=vcf.dat %>% pull(varSite) %>% .[i],
+                            pval=pvalue)
+}
+hgw_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  write_csv("D:/000博士毕业论文/表型数据/结构变异GWAS百粒重.csv")
+
+## 果皮厚度
+fst_list<-list()
+for(i in 1:nrow(vcf.dat)){
+  vcf.dat[i,-1] %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    left_join(pheno.dat,by=c("V2"="X1")) %>% 
+    #filter_at(vars(contains("_")),any_vars(. != "./.")) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V1=case_when(
+      V1 == "0/0" ~ "0",
+      TRUE ~ "1"
+    )) -> temp.dat
+  if(length(temp.dat %>% pull(V1) %>% unique()) > 1){
+    temp.dat %>% 
+      wilcox.test(fst~V1,data = .) %>% 
+      .$p.value -> pvalue
+  }
+  fst_list[[i]]<- data.frame(var_Site=vcf.dat %>% pull(varSite) %>% .[i],
+                             pval=pvalue)
+}
+fst_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  write_csv("D:/000博士毕业论文/表型数据/结构变异GWAS果皮厚度.csv")
+
+## 籽粒硬度
+gh_list<-list()
+for(i in 1:nrow(vcf.dat)){
+  vcf.dat[i,-1] %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    left_join(pheno.dat,by=c("V2"="X1")) %>% 
+    #filter_at(vars(contains("_")),any_vars(. != "./.")) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V1=case_when(
+      V1 == "0/0" ~ "0",
+      TRUE ~ "1"
+    )) -> temp.dat
+  if(length(temp.dat %>% pull(V1) %>% unique()) > 1){
+    temp.dat %>% 
+      wilcox.test(gh~V1,data = .) %>% 
+      .$p.value -> pvalue
+  }
+  gh_list[[i]]<- data.frame(var_Site=vcf.dat %>% pull(varSite) %>% .[i],
+                             pval=pvalue)
+}
+gh_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  write_csv("D:/000博士毕业论文/表型数据/结构变异GWAS籽粒硬度.csv")
+
+
+## 可滴定酸
+
+ta_list<-list()
+for(i in 1:nrow(vcf.dat)){
+  vcf.dat[i,-1] %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    rownames_to_column("V2") %>% 
+    left_join(pheno.dat,by=c("V2"="X1")) %>% 
+    #filter_at(vars(contains("_")),any_vars(. != "./.")) %>% 
+    filter(V1 != "./.") %>% 
+    mutate(V1=case_when(
+      V1 == "0/0" ~ "0",
+      TRUE ~ "1"
+    )) -> temp.dat
+  if(length(temp.dat %>% pull(V1) %>% unique()) > 1){
+    temp.dat %>% 
+      wilcox.test(ta~V1,data = .) %>% 
+      .$p.value -> pvalue
+  }
+  ta_list[[i]]<- data.frame(var_Site=vcf.dat %>% pull(varSite) %>% .[i],
+                             pval=pvalue)
+}
+ta_list %>% bind_rows() %>% 
+  mutate(padj=p.adjust(pval,method = "bonferroni")) %>% 
+  write_csv("D:/000博士毕业论文/表型数据/结构变异GWAS可滴定酸.csv")
+
+```
