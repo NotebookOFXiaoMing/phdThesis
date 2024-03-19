@@ -659,3 +659,20 @@ read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/可滴定酸
   write_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/可滴定酸相关SV基因/可滴定酸基因功能注释.csv")
 
 ```
+
+### 看下这个基因的变异位点在参考基因组上是纯合还是杂合 ys008G000883 chr8    6719923
+```
+vg giraffe -Z ../../pomeSV.giraffe.gbz -m ../../pomeSV.min -d ../../pomeSV.dist -f ../../../../upload2ncbi/YS_clean_1.fq.gz -f ../../../../upload2ncbi/YS_clean_2.fq.gz --threads 32 > YS.gam
+vg pack -x ../../pomeSV.giraffe.gbz -g YS.gam -Q 5 -s 5 -o YS.pcak -t 32
+vg call ../../pomeSV.giraffe.gbz -k YS.pcak -a -t 32 > YS.vcf
+
+grep "6719923" YS.vcf | less -S 位点是杂合
+```
+
+### 看下SV的连锁不平衡
+
+```
+read_tsv("merged92.vg.filter.recode.vcf",comment = "##")%>%mutate(across(contains("_"),function(x){str_sub(x,1,3)}))%>%mutate(REF="A",ALT="T")%>%write_tsv("01.vcf")
+grep "##" merged92.vg.filter.recode.vcf > 02.vcf
+cat 02.vcf 01.vcf > popdecayInput.vcf
+```
