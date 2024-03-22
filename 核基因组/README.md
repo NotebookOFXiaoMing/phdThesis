@@ -49,3 +49,11 @@ python fix_trf_output.py chr1.trf chr1.trf.fix # 多条序列会报错
 snakemake -s TRF.smk --cores 128 -p
 
 ```
+
+### trash 结果统计
+
+```
+library(tidyverse)
+list.files("./",pattern = "Summary.of.repetitive.regions.chr*",recursive = TRUE)%>%map(read.csv,row.name=1)%>%bind_rows()%>%write_csv("trash.output.summary.csv")
+list.files("./",pattern = "Summary.of.repetitive.regions.sca*",recursive = TRUE)%>%map(read.csv,row.name=1)%>%bind_rows()%>%write_csv("nonchr.trash.output.summary.csv")
+```
