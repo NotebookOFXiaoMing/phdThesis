@@ -57,3 +57,11 @@ http://47.96.249.172:16085/cpgview/drawmap
 
 170884098974144
 
+### 线粒体基因组组装
+
+```
+### 矫正ont数据
+conda activate OrganelleGenome
+Ratatosk correct -v -c 24 -s YS_clean_1.fq.gz YS_clean_2.fq.gz -l ys.nanopore.fq.gz -o ratatosk_correct_long_reads
+~/biotools/PMAT-1.2.2/bin/PMAT autoMito -i ../../upload2ncbi/ratatosk_correct_long_reads.fastq -o ys.pome.mito -st hifi -g 340m -cpu 24 -m
+```
