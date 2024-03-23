@@ -56,4 +56,12 @@ snakemake -s TRF.smk --cores 128 -p
 library(tidyverse)
 list.files("./",pattern = "Summary.of.repetitive.regions.chr*",recursive = TRUE)%>%map(read.csv,row.name=1)%>%bind_rows()%>%write_csv("trash.output.summary.csv")
 list.files("./",pattern = "Summary.of.repetitive.regions.sca*",recursive = TRUE)%>%map(read.csv,row.name=1)%>%bind_rows()%>%write_csv("nonchr.trash.output.summary.csv")
+
+bedtools coverage -a ../06.repeatModulerRepeatMaskerafterNextpolish/ys.repeatmasker/chr.100k.window -b trash.TR.bed -counts > trash.TR.counts
+```
+
+### EDTA
+
+```
+time EDTA.pl --genome ../29.centromics/ys.Chr.fna --species others --step all --cds ../08.proteinCodingGenes/05.evm/ys/ys.cds.fa --sensitive 1 --anno 1 -t 96
 ```
