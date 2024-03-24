@@ -64,4 +64,7 @@ bedtools coverage -a ../06.repeatModulerRepeatMaskerafterNextpolish/ys.repeatmas
 
 ```
 time EDTA.pl --genome ../29.centromics/ys.Chr.fna --species others --step all --cds ../08.proteinCodingGenes/05.evm/ys/ys.cds.fa --sensitive 1 --anno 1 -t 96
+
+python ~/biotools/quarTeT-main/quartet.py CentroMiner -i ../../../29.centromics/ys.Chr.fna --TE ../../../31.edta/ys.Chr.fna.mod.EDTA.anno/ys.Chr.fna.mod.EDTA.TEanno.gff3
+python ~/biotools/quarTeT-main/quartet.py CentroMiner -i ../../../../29.centromics/ys.Chr.fna --TE ../../../../31.edta/ys.Chr.fna.mod.EDTA.anno/ys.Chr.fna.mod.EDTA.TEanno.gff3 -n 30 -m 2000 -t 24
 ```
