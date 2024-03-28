@@ -67,4 +67,38 @@ time EDTA.pl --genome ../29.centromics/ys.Chr.fna --species others --step all --
 
 python ~/biotools/quarTeT-main/quartet.py CentroMiner -i ../../../29.centromics/ys.Chr.fna --TE ../../../31.edta/ys.Chr.fna.mod.EDTA.anno/ys.Chr.fna.mod.EDTA.TEanno.gff3
 python ~/biotools/quarTeT-main/quartet.py CentroMiner -i ../../../../29.centromics/ys.Chr.fna --TE ../../../../31.edta/ys.Chr.fna.mod.EDTA.anno/ys.Chr.fna.mod.EDTA.TEanno.gff3 -n 30 -m 2000 -t 24
+grep -v "@" quarTeT.best.candidate | grep -v "#" > centrometer.candidate
+```
+
+
+### 可视化stainedGlass结果
+
+```
+library(data.table)
+library(tidyverse)
+dat<-fread("results//pome.2000.10000.bed.gz")
+dat%>%filter(`#query_name`=="chr1"&reference_name=="chr1")%>%filter(query_start>=31000000&query_start<=33000000)%>%filter(reference_start>=31000000&reference_start<=33000000)%>%write_tsv("chr1.candidate.cnetrometer.stainedGlass")
+
+filterStainedGlass<-function(chr.name,chr.start,chr.end,output.prefix){
+  dat%>%
+    filter(`#query_name`==chr.name&reference_name==chr.name)%>%
+    filter(query_start>=chr.start&query_start<=chr.end)%>%
+    filter(reference_start>=chr.start&reference_start<=chr.end)%>%
+    write_tsv(paste0(output.prefix,".candidate.cnetrometer.stainedGlass"))
+}
+filterStainedGlass(chr.name = "chr1",chr.start = 29200000,chr.end = 29300000,output.prefix = "chr1")
+filterStainedGlass(chr.name = "chr2",chr.start = 29200000,chr.end = 29300000,output.prefix = "chr2")
+filterStainedGlass(chr.name = "chr3",chr.start = 21000000,chr.end = 23000000,output.prefix = "chr3")
+filterStainedGlass(chr.name = "chr4",chr.start = 19600000,chr.end = 20000000,output.prefix = "chr4")
+filterStainedGlass(chr.name = "chr5",chr.start = 18600000,chr.end = 19500000,output.prefix = "chr5")
+filterStainedGlass(chr.name = "chr6",chr.start = 11500000,chr.end = 12500000,output.prefix = "chr6")
+filterStainedGlass(chr.name = "chr7",chr.start = 12600000,chr.end = 15600000,output.prefix = "chr7")
+filterStainedGlass(chr.name = "chr8",chr.start = 15400000,chr.end = 17300000,output.prefix = "chr8")
+filterStainedGlass(chr.name = "chr8",chr.start = 15400000,chr.end = 17300000,output.prefix = "chr8")
+```
+
+### 可能得着丝粒区域和串联重复区取交集
+
+```
+cat ../chr1/all.repeats.from.chr1.fna.csv | grep -v "start" | awk -v FS="," '{print "chr1\t"$1"\t"$2"\t"$3"\t"$4}' > chr1.repeats.bed
 ```
