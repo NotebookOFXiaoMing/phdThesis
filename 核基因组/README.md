@@ -101,4 +101,46 @@ filterStainedGlass(chr.name = "chr8",chr.start = 15400000,chr.end = 17300000,out
 
 ```
 cat ../chr1/all.repeats.from.chr1.fna.csv | grep -v "start" | awk -v FS="," '{print "chr1\t"$1"\t"$2"\t"$3"\t"$4}' > chr1.repeats.bed
+bedtools intersect -a chr1.bed -b chr1.repeats.bed -wa -wb > chr1.candidate.centrometer.repeat
+
+cat ../chr2/all.repeats.from.chr2.fna.csv | grep -v "start" | awk -v FS="," '{print "chr2\t"$1"\t"$2"\t"$3"\t"$4}' > chr2.repeats.bed
+bedtools intersect -a chr2.bed -b chr2.repeats.bed -wa -wb > chr2.candidate.centrometer.repeat
+
+cat ../chr3/all.repeats.from.chr3.fna.csv | grep -v "start" | awk -v FS="," '{print "chr3\t"$1"\t"$2"\t"$3"\t"$4}' > chr3.repeats.bed
+bedtools intersect -a chr3.bed -b chr3.repeats.bed -wa -wb > chr3.candidate.centrometer.repeat
+
+cat ../chr4/all.repeats.from.chr4.fna.csv | grep -v "start" | awk -v FS="," '{print "chr4\t"$1"\t"$2"\t"$3"\t"$4}' > chr4.repeats.bed
+bedtools intersect -a chr4.bed -b chr4.repeats.bed -wa -wb > chr4.candidate.centrometer.repeatv
+cat ../chr5/all.repeats.from.chr5.fna.csv | grep -v "start" | awk -v FS="," '{print "chr5\t"$1"\t"$2"\t"$3"\t"$4}' > chr5.repeats.bed
+bedtools intersect -a chr5.bed -b chr5.repeats.bed -wa -wb > chr5.candidate.centrometer.repeat
+
+cat ../chr6/all.repeats.from.chr6.fna.csv | grep -v "start" | awk -v FS="," '{print "chr6\t"$1"\t"$2"\t"$3"\t"$4}' > chr6.repeats.bed
+bedtools intersect -a chr6.bed -b chr6.repeats.bed -wa -wb > chr6.candidate.centrometer.repeat
+
+cat ../chr7/all.repeats.from.chr7.fna.csv | grep -v "start" | awk -v FS="," '{print "chr7\t"$1"\t"$2"\t"$3"\t"$4}' > chr7.repeats.bed
+bedtools intersect -a chr7.bed -b chr7.repeats.bed -wa -wb > chr7.candidate.centrometer.repeat
+
+cat ../chr8/all.repeats.from.chr8.fna.csv | grep -v "start" | awk -v FS="," '{print "chr8\t"$1"\t"$2"\t"$3"\t"$4}' > chr8.repeats.bed
+bedtools intersect -a chr8.bed -b chr8.repeats.bed -wa -wb > chr8.candidate.centrometer.repeat
+```
+
+### 着丝粒区域的TE
+```
+cat ../../06.repeatModulerRepeatMaskerafterNextpolish/ys.repeatmasker/genome.nextpolish.upperbase.fasta.out | awk '{print $5"\t"$6"\t"$7"\t"$11}' | grep "chr" > chr.TE.bed
+bedtools intersect -a chr.candidate.centrometer.bed -b chr.TE.bed -wa -wb > candidate.centrometer.TE.type
+
+bedtools intersect -a chr.non.candidate.centrometer.bed -b ../../06.repeatModulerRepeatMaskerafterNextpolish/TE.count.100k.window -wa -wb > non.candidate.centrometer.TE
+bedtools intersect -a chr.candidate.centrometer.bed -b ../../06.repeatModulerRepeatMaskerafterNextpolish/TE.count.100k.window -wa -wb > candidate.centrometer.TE
+
+cp chr.non.candidate.centrometer.bed chr.non.candidate.centrometer.bed01 ## 看看着丝粒上下游1M
+vim chr.non.candidate.centrometer.bed01
+
+bedtools intersect -a chr.non.candidate.centrometer.bed01 -b ../../06.repeatModulerRepeatMaskerafterNextpolish/TE.count.100k.window -wa -wb > non.candidate.centrometer.TE01
+
+## 基因数量
+bedtools intersect -a chr.candidate.centrometer.bed -b ../../08.proteinCodingGenes/05.evm/ys/gene.count.100k.window -wa -wb > candidate.centrometer.Gene
+bedtools intersect -a chr.non.candidate.centrometer.bed01 -b ../../08.proteinCodingGenes/05.evm/ys/gene.count.100k.window -wa -wb > non.candidate.centrometer.Gene01
+
+grep "gene" ../../08.proteinCodingGenes/05.evm/ys/ys.rename.gff3 | grep "chr" | awk '{print $1"\t"$4"\t"$5"\t"$9}' | awk 'gsub("ID=","")' > gene.bed
+bedtools intersect -a chr.candidate.centrometer.bed -b gene.bed -wa -wb | wc -l #140
 ```
