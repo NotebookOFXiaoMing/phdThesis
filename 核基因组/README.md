@@ -144,3 +144,58 @@ bedtools intersect -a chr.non.candidate.centrometer.bed01 -b ../../08.proteinCod
 grep "gene" ../../08.proteinCodingGenes/05.evm/ys/ys.rename.gff3 | grep "chr" | awk '{print $1"\t"$4"\t"$5"\t"$9}' | awk 'gsub("ID=","")' > gene.bed
 bedtools intersect -a chr.candidate.centrometer.bed -b gene.bed -wa -wb | wc -l #140
 ```
+
+
+## 泛基因家族
+```
+library(tidyverse)
+list.files("emapper",pattern = "*annotations$",full.names = TRUE)%>%map(read_tsv,comment="##")%>%bind_rows()%>%write_tsv("emapper.all.six.pome.tsv")
+
+## 基因长度
+library(rtracklayer)
+myGeneLen<-function(x){
+  import(x) %>% 
+    as.data.frame() %>% 
+    filter(type=="mRNA") %>% 
+    select(width,ID) %>% 
+    return()
+}
+
+list.files("all.genomes",pattern = "*.gff3",full.names = TRUE)%>%map(myGeneLen)%>%bind_rows()%>%write_tsv("allGenesLength.txt")
+
+myExonNum<-function(x){
+  import(x) %>% 
+    as.data.frame() %>% 
+    filter(type=="exon") %>% 
+    mutate(ID=str_replace(ID,pattern = "exon[0-9]+","mRNA1")) %>% 
+    select(ID) %>%
+    group_by(ID) %>% 
+    summarise(count=n()) %>% 
+    return()
+}
+
+list.files("all.genomes",pattern = "*.gff3",full.names = TRUE)%>%map(myExonNum)%>%bind_rows()%>%write_tsv("allGenesExonNum.txt")
+
+## 提取单拷贝cds 计算kaks 和核苷酸多样性
+python extractCDSfromtotal.py CoreSingleCopyFamilyIDs.txt
+conda activate doubletrouble
+Rscript calculateKaKsUsingCDS.R core.kaks
+
+~/anaconda3/envs/syri/bin/snakemake -s calculateKaKsUsingCDS.smk --cores 128 -p -k
+python ../01.Core.CDS/extractCDSfromtotal.py DispensableSingleCopyFamilyIDs.txt
+
+~/anaconda3/envs/syri/bin/snakemake -s calculateKaKsUsingCDS.smk --cores 128 -p -k
+
+cat 01.Core.CDS.kaks/*.kaks | grep -v "dup" > core.kaks
+cat 02.Dispensable.CDS.kaks/*.kaks | grep -v "dup" > dispensable.kaks
+
+
+snakemake -s mafft.smk --cores 128 -p -k
+
+## 计算核苷酸多样性
+library(tidyverse)
+library(pegas)
+myfun<-function(x){return(nuc.div(read.dna(x,format = "fasta")))}
+list.files("01.Core.CDS.aln/",pattern = "*.fasta",full.names = TRUE)%>%map(myfun)%>%unlist()%>%write_lines("core.nucldiv")
+list.files("02.Dispensable.CDS.aln/",pattern = "*.fasta",full.names = TRUE)%>%map(myfun)%>%unlist()%>%write_lines("dispensable.nucldiv")
+```
