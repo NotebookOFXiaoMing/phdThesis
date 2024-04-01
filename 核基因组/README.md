@@ -198,4 +198,22 @@ library(pegas)
 myfun<-function(x){return(nuc.div(read.dna(x,format = "fasta")))}
 list.files("01.Core.CDS.aln/",pattern = "*.fasta",full.names = TRUE)%>%map(myfun)%>%unlist()%>%write_lines("core.nucldiv")
 list.files("02.Dispensable.CDS.aln/",pattern = "*.fasta",full.names = TRUE)%>%map(myfun)%>%unlist()%>%write_lines("dispensable.nucldiv")
+
+## GO富集
+
+cat emapper/*.annotations | grep -v "#" | awk -v FS="\t" '{print $10"\t"$1}' | grep -v "-" > Term2Gene.temp
+python getTerm2Gene.py Term2Gene.temp Term2Gene.txt
+```
+
+## 桃金娘目系统发育树
+
+```
+### 使用Helixer对基因组进行注释
+sbatch run_helixer_Pome.slurm
+## 根据gff提取pep
+snakemake -s gffread.smk --cores 128 -p
+## 统计pep数量
+snakemake -s statPEPnum.smk --cores 128 -p
+
+time orthofinder -f all.peps/ -M msa -S diamond -T fasttree -a 120 -t 120
 ```
