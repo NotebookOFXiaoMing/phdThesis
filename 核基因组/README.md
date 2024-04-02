@@ -217,3 +217,14 @@ snakemake -s statPEPnum.smk --cores 128 -p
 
 time orthofinder -f all.peps/ -M msa -S diamond -T fasttree -a 120 -t 120
 ```
+
+## 基因家族收缩扩张
+
+```
+time orthofinder -f allpeps -M msa -S diamond -T fasttree -a 120 -t 120
+
+read_tsv("../11.orthofinder/emapper/ys.emapper.annotations",comment = "##")%>%
+select(`#query`,BRITE)%>%
+filter(BRITE!="-")%>%select(2,1)%>%write_tsv("keggTerm2Gene.temp",col_names = FALSE)
+python ../11.orthofinder/getTerm2Gene.py keggTerm2Gene.temp keggTerm2Gene.txt
+```
