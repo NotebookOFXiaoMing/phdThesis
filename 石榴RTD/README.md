@@ -51,6 +51,43 @@ snakemake -s cpGTFSJ.smk --cores 128 -p
 ## 运行了8个多小时
 python ~/biotools/RTDmaker-main/RTDmaker.py ShortReads --assemblies 04.assemblies --references ref.gtf --SJ-data 04.SJdata --genome ref/pome.ref.nonref.fa --fastq clean.fastq --outpath pomeRTD --outname pome --prefix pomeRTD --SJ-reads 2 1 --tpm 0.1 1 --fragment-len 0.7 --antisense-len 0.5 --add intronic --keep intermediary --ram 8
 ```
+## 更改tpm 参数 设置为0.1 1 转录本15万多 改成 1 1 最小表达量是1 在 一个样本中
+## 备份之前的结果
+```
+cp -r pomeRTD pomeRTD.backup/
+```
+
+
+## clean.fastq 的数据为了节省存储空间给删掉了，新建一个clean.fastq文件夹
+## 把一个bioproject的转录组数据复制到这个文件夹下
+
+```
+mkdir clean.fastq
+cp ../../rnaseq/PRJNA901890/*.gz clean.fastq/
+```
+
+## 运行
+
+```
+python ~/biotools/RTDmaker-main/RTDmaker.py ShortReads --assemblies 04.assemblies --references ref.gtf --SJ-data 04.SJdata --genome ref/pome.ref.nonref.fa --fastq clean.fastq --outpath pomeRTD --outname pome --prefix pomeRTD --SJ-reads 2 1 --tpm 1 1 --fragment-len 0.7 --antisense-len 0.5 --add intronic --keep intermediary --ram 8
+```
+
+## 提示
+
+```
+ File "/data/myan/raw_data/pome/sour.pome/20231015.reanalysis/24.pomeRTD/pomeRTD/pome_RTDmaker_output/intermediary/pome_assemblies1_non_redundant.gtf" already exist (924.6MB)
+Wed Aug 14 22:13:49 2024 Keeping current file
+```
+## 可能就不会根据表达量过滤了
+## pome_assemblies1_non_redundant.gtf 把这个文件删了试试
+## 这样应该是不行
+
+## RTDmaker 的github主页说检测到intermediary 就不会从头运行，测试用一个bioproject的数据能不能行
+
+## 用 tpm 0.1 1参数构建的参考转录本去计算表达量，获取表达量矩阵以后再进行过滤
+
+## 跳转到下面salmon步骤
+
 
 ### 运行transuite
 
@@ -85,3 +122,7 @@ salmon index -t ../pomeRTD/pome_RTDmaker_output/pome_padded.fa -k 31 -i pomeRTD_
 ## Jul25
 snakemake -s salmon_quant.smk --cores 128 -p
 ```
+
+### 有多个文件夹，每个文件夹下有对应的转录组数据,这种
+### 怎么一次性用snakemake去匹配 暂时没有搞明白
+### 我这里的处理方式是 固定文件夹去匹配，然后手动修改文件夹
