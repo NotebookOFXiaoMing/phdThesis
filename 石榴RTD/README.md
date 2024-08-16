@@ -126,3 +126,41 @@ snakemake -s salmon_quant.smk --cores 128 -p
 ### 有多个文件夹，每个文件夹下有对应的转录组数据,这种
 ### 怎么一次性用snakemake去匹配 暂时没有搞明白
 ### 我这里的处理方式是 固定文件夹去匹配，然后手动修改文件夹
+
+## R tximport 包提取表达量
+
+## 参考 https://bioconductor.org/packages/devel/bioc/vignettes/tximport/inst/doc/tximport.html#Import_transcript-level_estimates
+
+```
+library(ridyverse)
+library(magrittr)
+rtracklayer::import("../pomeRTD.backup/pomeRTD/pome_RTDmaker_output//pome_padded.gtf") -> gtf.dat
+gtf.dat%>%as.data.frame()%>%filter(type=="transcript")%>%select(transcript_id,gene_id)%>%set_colnames(c("TXNAME","GENEID")) -> tx2gene
+
+## tx2gene 两列 第一列 TXNAME 第二列 GENEID
+
+## 转录本水平的表达量
+file<-"salmon.quant.output/PRJNA360679/SRR5279386/quant.sf"
+names(file)<-"SRR5279386"
+txi.salmon<-tximport(file, type = "salmon",txOut = TRUE)
+txi.salmon$abundance%>%head()
+
+## 基因水平的表达量
+txi.salmon<-tximport(file, type = "salmon", tx2gene = tx2gene)
+
+files<-list.files("salmon.quant.output",pattern = "quant.sf",recursive = TRUE,full.names = TRUE)
+names(files)<-str_extract(files,pattern = "SRR[0-9]+")
+
+txi.salmon.transcript<-tximport(files, type = "salmon",txOut = TRUE)
+txi.salmon.gene<-tximport(files, type = "salmon",tx2gene = tx2gene)
+
+save(txi.salmon.gene,txi.salmon.transcript,file = "txi.salmon.Rdata")
+
+txi.salmon.transcript$abundance %>% as.data.frame() -> transcript.tpm
+## 将tpm值大于0.5定义为表达
+transcript.tpm[transcript.tpm > 0.5] <- 1
+transcript.tpm[transcript.tpm <= 0.5] <- 0
+
+## 总共是168112个转录本 0.5过滤后 146818
+## RTDmaker 默认参数是 1 1 最少在1个样本中的表达量大于1
+```
