@@ -132,8 +132,10 @@ snakemake -s salmon_quant.smk --cores 128 -p
 ## 参考 https://bioconductor.org/packages/devel/bioc/vignettes/tximport/inst/doc/tximport.html#Import_transcript-level_estimates
 
 ```
-library(ridyverse)
+library(tidyverse)
 library(magrittr)
+library(tximport)
+
 rtracklayer::import("../pomeRTD.backup/pomeRTD/pome_RTDmaker_output//pome_padded.gtf") -> gtf.dat
 gtf.dat%>%as.data.frame()%>%filter(type=="transcript")%>%select(transcript_id,gene_id)%>%set_colnames(c("TXNAME","GENEID")) -> tx2gene
 
@@ -160,7 +162,34 @@ txi.salmon.transcript$abundance %>% as.data.frame() -> transcript.tpm
 ## 将tpm值大于0.5定义为表达
 transcript.tpm[transcript.tpm > 0.5] <- 1
 transcript.tpm[transcript.tpm <= 0.5] <- 0
-
-## 总共是168112个转录本 0.5过滤后 146818
+transcript.tpm[rowSums(transcript.tpm) >= 1,]%>%dim()
+## 总共是168112个转录本 0.5过滤后 146816
 ## RTDmaker 默认参数是 1 1 最少在1个样本中的表达量大于1
+
+transcript.tpm[rowSums(transcript.tpm) >= 1,]%>%rownames_to_column("TXNAME")%>%left_join(tx2gene,by=c("TXNAME"="TXNAME"))%>%pull(GENEID)%>%unique()%>%length()
+## 基因剩 54924
+
+keep.transcript<-transcript.tpm[rowSums(transcript.tpm) >= 1,]%>%rownames_to_column("TXNAME")%>%select(TXNAME)
+gtf.dat%>%as.data.frame()%>%inner_join(keep.transcript,by=c("transcript_id"="TXNAME"))%>%rtracklayer::export("pome_padded_filtered.gtf")
+
+rtracklayer::import("../pomeRTD.backup/pomeRTD/pome_RTDmaker_output//pome.gtf")%>%as.data.frame()%>%inner_join(keep.transcript,by=c("transcript_id"="TXNAME"))%>%rtr
+    acklayer::export("pome.filtered.gtf")
 ```
+
+## 提取转录本序列
+
+```
+gffread pome_padded_filtered.gtf -g ../ref/pome.ref.nonref.fa -w pomeRTD_padded_filtered.trans.fa
+gffread pome.filtered.gtf -g ../ref/pome.ref.nonref.fa -w pomeRTD.filtered.trans.fa
+
+## 文件所在路径 05.salmon.quant
+```
+
+## 重新运行 transuite
+
+```
+conda activate rnaseq
+time python ~/biotools/TranSuite-main/transuite.py Auto --gtf pome.filtered.gtf --fasta pomeRTD.filtered.trans.fa --outpath transuite.output --outname pome
+## 15min
+```
+
