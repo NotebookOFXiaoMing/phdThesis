@@ -193,3 +193,8 @@ time python ~/biotools/TranSuite-main/transuite.py Auto --gtf pome.filtered.gtf 
 ## 15min
 ```
 
+## 平均外显子数量
+
+```
+rtracklayer::import("pome.filtered.gtf")%>%as.data.frame()%>%filter(type=="exon")%>%group_by(transcript_id,gene_id)%>%summarise(exon_num=n())%>%filter(exon_num>1)%>%pull(exon_num)%>%summary()
+```
