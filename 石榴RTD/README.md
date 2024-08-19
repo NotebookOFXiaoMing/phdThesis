@@ -198,3 +198,27 @@ time python ~/biotools/TranSuite-main/transuite.py Auto --gtf pome.filtered.gtf 
 ```
 rtracklayer::import("pome.filtered.gtf")%>%as.data.frame()%>%filter(type=="exon")%>%group_by(transcript_id,gene_id)%>%summarise(exon_num=n())%>%filter(exon_num>1)%>%pull(exon_num)%>%summary()
 ```
+
+## 盐胁迫转录组数据处理
+
+root 1 2 鉴定到5个差异可变剪切的基因，使用eggmapper做功能注释
+
+```
+seqkit grep -r -f gene.list ../05.salmon.quant/transuite.output/pome_TranSuite_output/pome_transfeat/pome_transfeat_pep.fasta -o candidate.peps
+conda activate eggnogmapper
+export EGGNOG_DATA_DIR=/home/myan/my_data/database/eggnog/
+emapper.py -i candidate.peps -o candidate --cpu 32 -m diamond --excel
+```
+
+## 核心转录本 总转录本数量 拟合
+
+Pan-GP https://pangp.zhaopage.com/download.html
+```
+load("txi.salmon.Rdata")
+library(tidyverse)
+txi.salmon.gene$abundance%>%as.data.frame() -> tpm.gene
+tpm.gene[tpm.gene > 0.5] <- 1
+tpm.gene[tpm.gene <= 0.5] <- 0
+tpm.gene[rowSums(tpm.gene) >= 1,]%>%write_delim(col_names = FALSE,file = "tpm.gene.01.matrix",delim = "")
+
+```
