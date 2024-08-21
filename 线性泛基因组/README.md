@@ -173,3 +173,81 @@ conda activate interproscan01
 module load perl5/5.18.2-thread-multi
 
 ```
+
+## 根据fastp的输出统计数据量
+
+```
+## 文件路径 /home/myan/my_data/raw_data/pome/pan.raw.fq
+## 总共96份材料 92份RY的数据 + Tunisia + Nana + PT + YT 这四个样本的测序深度比较高
+## 01.fastp.report.summary 92个样本
+## 直接用92个数据统计
+snakemake -s fastp_report_stat.smk --cores 32 -p
+list.files("01.fastp.report.summary",pattern = "*.csv",full.names = TRUE)%>%map(read_csv)%>%bind_rows() -> dat
+dat%>%mutate(total=r1+r2)%>%mutate(depth=total/340000000)%>%write_csv("sequencingDataStat92.csv")
+```
+
+## 统计megahit组装的结果 contig数量 N50 组装的基因组大小 BUSCO值等
+
+```
+## contig数量 基因组大小 N50
+snakemake -s megahit_assemble_stat.smk --cores 32 -p
+list.files("02.megahit.stats",pattern = "*.txt",full.names = TRUE,recursive = FALSE)%>%map(read_tsv)%>%bind_rows() -> dat
+
+dat%>%filter(str_detect(file,"_"))%>%arrange(desc(num_seqs))
+dat%>%filter(str_detect(file,"_"))%>%arrange(num_seqs)
+```
+## 统计quast 没有比对上的序列数量
+
+```
+list.files("03.quast",pattern = "*.unaligned.info",recursive = TRUE,full.names = TRUE)%>%map(read_tsv)%>%bind_rows() -> dat
+
+## 完全没有比对的序列
+dat%>%filter(str_starts(Contig,pattern = "Ch|Ti|Gl"))%>%filter(Unaligned_type=="full")%>%mutate(group=str_sub(Contig,1,2))%>%group_by(group)%>%summarise(count=n())
+
+dat%>%filter(str_starts(Contig,pattern = "Ch|Ti|Gl"))%>%filter(Unaligned_type=="full")%>%mutate(group=str_sub(Contig,1,2))%>%group_by(group)%>%summarise(count=n())%>%pull(count)%>%sum()
+dat%>%filter(str_starts(Contig,pattern = "Ch|Ti|Gl"))%>%filter(Unaligned_type=="full")%>%pull(Total_length)%>%sum()
+
+## 局部没有比对的序列
+dat%>%filter(str_starts(Contig,pattern = "Ch|Ti|Gl"))%>%filter(Unaligned_type!="full")%>%filter(Unaligned_length/Total_length>=0.5)%>%mutate(group=str_extract(Contig,pattern =".*_k"))%>%select(-5)%>%group_by(group)%>%summarise(count=n())%>%pull(count)%>%sum()
+
+```
+## 用基因组序列去跑BUSCO
+
+```
+## 测试
+time busco -i 02.megahit.output.rename/Ch_BHYSZ.contigs.fa -l /home/myan/my_data/database/eukaryota_odb10/ -o 02.megahit.busco.output -m genome --force --offline --augustus --cpu 32
+## 如果用太多核心可能会有报错 12个核心还好
+## 5min运行完
+## eukaryota_odb10 数据库是255
+conda activate busco5.4.6
+snakemake -s busco.smk --cores 128 -p
+
+## eukaryota_odb10/ 数据库 
+time busco -i 02.megahit.output.rename/Ch_BHYSZ.contigs.fa -l /home/myan/my_data/database/embryophyta_odb10 -o 02.megahit.busco.output -m genome --force --offline --augustus --cpu 12
+## 34 min
+snakemake -s busco.smk --cores 128 -p
+```
+
+## 非参考序列中蛋白编码基因长度 外显子数量
+
+```
+rtracklayer::import("10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.rename.gff3")%>%as.data.frame()%>%filter(type=="gene")%>%pull(width)%>%mean()
+rtracklayer::import("10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.rename.gff3")%>%as.data.frame()%>%filter(type=="exon")%>%mutate(ID=str_replace(ID,pattern = ".exon[0-9]+",""))%>%group_by(ID)%>%summarise(count=n())%>%pull(count)%>%mean()
+
+rtracklayer::import("10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.rename.gff3")%>%as.data.frame()%>%filter(type=="gene")%>%select(width)%>%mutate(group="Non
+    ref") -> nonref.gene.len
+
+rtracklayer::import("/data/myan/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.rename.gff3")%>%as.data.frame()%>%filter(type=="gene")%>%s
+    elect(width)%>%mutate(group="Ref") -> ref.gene.len
+
+t.test(width~group,data=bind_rows(ref.gene.len,nonref.gene.len))
+bind_rows(ref.gene.len,nonref.gene.len)%>%write_tsv("gene.len.txt")
+
+rtracklayer::import("/data/myan/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.rename.gff3")%>%as.data.frame()%>%filter(type=="exon")%>%m
+    utate(ID=str_replace(ID,pattern = ".exon[0-9]+",""))%>%group_by(ID)%>%summarise(count=n())%>%mutate(group="Ref") -> ref.exon.number
+
+rtracklayer::import("10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.rename.gff3")%>%as.data.frame()%>%filter(type=="exon")%>%mutate(ID=str_replace(ID,pattern 
+    = ".exon[0-9]+",""))%>%group_by(ID)%>%summarise(count=n())%>%mutate(group="Ref") -> nonref.exon.number
+
+bind_rows(ref.exon.number,nonref.exon.number)%>%write_tsv("exon.number.txt")
+```
