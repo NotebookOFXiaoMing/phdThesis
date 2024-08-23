@@ -251,3 +251,140 @@ rtracklayer::import("10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.rename
 
 bind_rows(ref.exon.number,nonref.exon.number)%>%write_tsv("exon.number.txt")
 ```
+
+## 基因表达量
+
+```
+## 路径 pan.raw.fq/11.SNP.smallInDel/02.YS.NoRef.Genome
+library(tidyverse)
+myfun<-function(x){
+  read_tsv(x) %>% 
+    select(`Gene ID`,TPM) %>% 
+    mutate(study=str_extract(x,pattern = "PRJNA[0-9]+"),
+           sampleid=str_extract(x,pattern = "SRR[0-9]+")) -> dat
+  return(dat)
+}
+list.files("00.rnaseq",pattern = "gene_abund.tsv",full.names = TRUE,recursive = TRUE)%>%map(myfun)%>%bind_rows() -> tpm.longer
+
+tpm.longer%>%pull(sampleid)%>%unique()%>%length #335
+tpm.longer%>%pull(study)%>%unique()%>%length # 28
+
+tpm.longer%>%select(-3)%>%pivot_wider(names_from = "sampleid",values_from = "TPM")%>%column_to_rownames("Gene ID") -> tpm.wider.raw
+
+tpm.wider<-tpm.wider.raw
+tpm.wider[tpm.wider <= 0.5] <- 0
+
+rowSums(tpm.wider)%>%as.data.frame()%>%rownames_to_column("geneid")%>%rename("tpm"=".")%>%filter(str_starts(geneid,"Non"))%>%filter(tpm>0)%>%dim
+rowSums(tpm.wider)%>%as.data.frame()%>%rownames_to_column("geneid")%>%rename("tpm"=".")%>%filter(!str_starts(geneid,"Non"))%>%filter(tpm>0)%>%dim
+
+save(tpm.longer,tpm.wider,tpm.wider.raw,file="tpm335samples.Rdata")
+
+```
+
+## 转录组数据的比对率
+
+```
+## 路径 pan.raw.fq/11.SNP.smallInDel/02.YS.NoRef.Genome
+
+myfun<-function(x){
+  align_rate<-read_lines(x)[15]%>%str_extract(pattern = "[0-9]+.[0-9]+")%>%as.numeric()
+  sampleid<-str_extract(x,pattern = "SRR[0-9]+")
+  
+  return(data.frame(x=sampleid,y=align_rate))
+}
+
+list.files("00.rnaseq",pattern = ".txt",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows()%>%mutate(group="refplusnonref") -> rpn.dat
+list.files("../01.YS.Genome/00.rnaseq",pattern = ".txt",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows()%>%mutate(group="ref") -> r.dat
+
+bind_rows(r.dat,rpn.dat)%>%write_tsv("rnaseq_align_rate.txt")
+
+```
+
+## 非参考序列中注释到PFAM结构域基因的比例
+
+```
+read_tsv("../../10.evm.proteinCodingGenes/06.emapper/NonRefSeq.emapper.annotations",comment = "##")%>%select(`#query`,PFAMs)%>%filter(PFAMs!="-")%>%dim()
+read_tsv("../../../sour.pome/20231015.reanalysis/09.function.annotation/01.emapper/ys.emapper.annotations",comment = "##")%>%select(`#query`,PFAMs)%>%filter(PFAMs!=
+    "-")%>%dim()
+```
+
+## 非参考序列中注释的蛋白的GO富集分析
+
+```
+## 参考微信公众号推文 使用clusterProfiler对非模式植物进行注释
+python parse_go_obofile.py -i go-basic.obo -o go.tb
+## 下面的代码需要联网
+python parse_eggNOG.py -i ../10.evm.proteinCodingGenes/06.emapper/NonRefSeq.emapper.annotations -g go.tb -O ath,osa -o nonref.output
+python parse_eggNOG.py -i ../../sour.pome/20231015.reanalysis/09.function.annotation/01.emapper/ys.emapper.annotations -g go.tb -O ath,osa -o ref.output
+
+library(clusterProfiler)
+
+GOinfo<-read_tsv("phdthesis/chapter4/data/go.tb")
+GOinfo
+
+list.files("phdthesis",pattern = "GOanno*",recursive = TRUE,
+           full.names = TRUE) %>% 
+  map(read_tsv) %>% 
+  bind_rows() %>% 
+  filter(GO!="-") -> GOannotation
+
+GOannotation %>% 
+  filter(str_starts(gene,"NonRef")) %>% 
+  pull(gene) %>% unique() -> nonrefgenelist
+
+enricher(nonrefgenelist,
+         TERM2GENE = GOannotation %>% 
+           filter(level=="MF") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.5,
+         qvalueCutoff = 0.5) -> nonref.go.enricher.MF
+
+dotplot(nonref.go.enricher.MF)
+
+enricher(nonrefgenelist,
+         TERM2GENE = GOannotation %>% 
+           filter(level=="BP") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.5,
+         qvalueCutoff = 0.5) -> nonref.go.enricher.BP
+dotplot(nonref.go.enricher.BP)
+
+enricher(nonrefgenelist,
+         TERM2GENE = GOannotation %>% 
+           filter(level=="CC") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.5,
+         qvalueCutoff = 0.5) -> nonref.go.enricher.CC
+dotplot(nonref.go.enricher.CC)
+
+```
+
+## 使用resistify注释抗病基因
+
+```
+## https://github.com/SwiftSeal/resistify
+conda activate resistify
+resistify ../10.evm.proteinCodingGenes/05.evm/NonRefSeq/NonRefSeq.pep.fa nonref.resistify.output
+## 运行11min
+resistify ../08.proteinCodingGenes/05.evm/ys/ys.pep.fa ref.resistify.output
+## 运行了2个多小时
+```
+
+## 基因存在缺失矩阵构建进化树
+
+```
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  column_to_rownames("geneid") %>%
+  t() %>% 
+  as.data.frame() %>% 
+  unite("newcol",everything(),sep="") %>% 
+  rownames_to_column() %>% 
+  magrittr::set_colnames(c("92","31998")) %>% 
+  write_tsv("phdthesis/chapter4/data/genePAV92.iqtree.phy")
+
+iqtree2 -s genePAV92.iqtree.phy -bb 1000
+
+```
