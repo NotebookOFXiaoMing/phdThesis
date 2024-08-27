@@ -387,4 +387,362 @@ read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>%
 
 iqtree2 -s genePAV92.iqtree.phy -bb 1000
 
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  column_to_rownames("geneid") %>%
+  t() %>% 
+  as.data.frame() %>% 
+  prcomp() -> genePAV.pca
+
+genePAV.pca$x %>% 
+  as.data.frame() %>% 
+  select(1,2) %>% 
+  rownames_to_column("sampleid") %>% 
+  mutate(group=case_when(
+    str_sub(sampleid,1,2) == "Ti" ~ "A",
+    TRUE ~ "B"
+  )) %>% 
+  ggplot(aes(x=PC1,y=PC2))+
+  geom_point(aes(color=group))
+
+```
+
+## 不同组石榴之间的基因存在频率
+
+```
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  column_to_rownames("geneid") %>% 
+  #select(starts_with("Ti")) %>% 
+  unite("Ti",starts_with("Ti"),sep="") %>% 
+  unite("nonTi",starts_with(c("Ch","Gl")),sep="") %>% 
+  mutate(Ti0 = str_count(Ti,"0"),
+         Ti1 = str_count(Ti,"1"),
+         nonTi0 = str_count(nonTi,"0"),
+         nonTi1 = str_count(nonTi,"1")) %>% 
+  select(-c("Ti","nonTi")) -> dat
+
+myfun<-function(x){
+  matrix(x,ncol = 2) %>% 
+    fisher.test() %>% 
+    .$p.value 
+}
+
+
+
+dat %>% apply(MARGIN = 1,myfun,simplify = FALSE) %>% 
+  unlist() %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  magrittr::set_names(c("geneid","pvalue")) %>% 
+  mutate(fdr=p.adjust(pvalue,method="fdr")) -> dat.fdr
+
+## 不利基因1
+dat %>% 
+  rownames_to_column("geneid") %>% 
+  left_join(dat.fdr,by=c("geneid"="geneid")) %>% 
+  mutate(Ti1Freq=Ti1/(Ti0+Ti1),
+         nonTi1Freq=nonTi1/(nonTi1+nonTi0)) %>% 
+  filter(fdr<=0.001) %>% 
+  filter(nonTi1Freq==0|Ti1Freq==0) %>% 
+  filter(nonTi1Freq==0) %>% 
+  pull(geneid) -> unfav.gene.01
+
+## 有利基因1
+dat %>% 
+  rownames_to_column("geneid") %>% 
+  left_join(dat.fdr,by=c("geneid"="geneid")) %>% 
+  mutate(Ti1Freq=Ti1/(Ti0+Ti1),
+         nonTi1Freq=nonTi1/(nonTi1+nonTi0)) %>% 
+  filter(fdr<=0.001) %>% 
+  filter(nonTi1Freq==0|Ti1Freq==0) %>% 
+  filter(Ti1Freq==0) %>% 
+  pull(geneid) -> fav.gene.01
+
+## 不利基因2
+dat %>% 
+  rownames_to_column("geneid") %>% 
+  left_join(dat.fdr,by=c("geneid"="geneid")) %>% 
+  mutate(Ti1Freq=Ti1/(Ti0+Ti1),
+         nonTi1Freq=nonTi1/(nonTi1+nonTi0)) %>% 
+  filter(fdr<=0.001) %>% 
+  filter(nonTi1Freq!=0&Ti1Freq!=0) %>% 
+  mutate(log2FC=log2(Ti1Freq/nonTi1Freq)) %>% 
+  filter(log2FC>= 1) %>% 
+  pull(geneid) -> unfav.gene.02
+
+## 有利基因2
+dat %>% 
+  rownames_to_column("geneid") %>% 
+  left_join(dat.fdr,by=c("geneid"="geneid")) %>% 
+  mutate(Ti1Freq=Ti1/(Ti0+Ti1),
+         nonTi1Freq=nonTi1/(nonTi1+nonTi0)) %>% 
+  filter(fdr<=0.001) %>% 
+  filter(nonTi1Freq!=0&Ti1Freq!=0) %>% 
+  mutate(log2FC=log2(Ti1Freq/nonTi1Freq)) %>% 
+  filter(log2FC<= -1) %>% 
+  pull(geneid) -> fav.gene.02
+
+c(unfav.gene.01,unfav.gene.02) %>% length()
+c(fav.gene.01,fav.gene.02) %>% length()
+
+c(fav.gene.01,fav.gene.02)
+
+str_count(c(fav.gene.01,fav.gene.02),"ys") %>% sum()
+str_count(c(fav.gene.01,fav.gene.02),"Non") %>% sum()
+
+str_count(c(unfav.gene.01,unfav.gene.02),"Non") %>% sum()
+
+str_count(c(unfav.gene.01,unfav.gene.02),"ys") %>% sum()
+
+GOinfo<-read_tsv("phdthesis/chapter4/data/go.tb")
+
+list.files("phdthesis",pattern = "GOanno*",recursive = TRUE,
+           full.names = TRUE) %>% 
+  map(read_tsv) %>% 
+  bind_rows() %>% 
+  filter(GO!="-") -> GOannotation
+
+library(clusterProfiler)
+## 不利基因富集分析
+enricher(paste0(c(unfav.gene.01,unfav.gene.02),".mRNA1"),
+         TERM2GENE = GOannotation %>% 
+           filter(level=="MF") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> unfav.MF.go
+dotplot(unfav.MF.go)
+
+enricher(paste0(c(unfav.gene.01,unfav.gene.02),".mRNA1"),
+         TERM2GENE = GOannotation %>% 
+           filter(level=="BP") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> unfav.BP.go
+dotplot(unfav.BP.go)
+
+enricher(paste0(c(unfav.gene.01,unfav.gene.02),".mRNA1"),
+         TERM2GENE = GOannotation %>% 
+           filter(level=="CC") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> unfav.CC.go
+dotplot(unfav.CC.go)
+
+## 有利基因富集
+
+enricher(paste0(c(fav.gene.01,fav.gene.02),".mRNA1"),
+         TERM2GENE = GOannotation %>% 
+           filter(level=="MF") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> fav.MF.go
+dotplot(fav.MF.go)
+
+enricher(paste0(c(fav.gene.01,fav.gene.02),".mRNA1"),
+         TERM2GENE = GOannotation %>% 
+           filter(level=="BP") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> fav.BP.go
+dotplot(fav.BP.go)
+
+enricher(paste0(c(fav.gene.01,fav.gene.02),".mRNA1"),
+         TERM2GENE = GOannotation %>% 
+           filter(level=="CC") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) -> fav.CC.go
+
+dotplot(fav.CC.go)
+```
+
+## 基因PAV与表型的关联分析
+
+```
+### 表型数据整理
+read_excel("D:/000博士毕业论文/表型数据/01.单果重.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(singleFruitWeight=mean(重量,na.rm = TRUE)) %>% 
+  rename("Taxa"="X1") %>% 
+  write_tsv("phdthesis/chapter4/data/pheno/01.singleFruitWeight.tsv")
+
+read_excel("D:/000博士毕业论文/表型数据/03.果皮厚度mm.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(FruitPeelThickness=mean(果皮厚mm,na.rm = TRUE)) %>% 
+  rename("Taxa"="X1") %>% 
+  write_tsv("phdthesis/chapter4/data/pheno/03.FruitPeelThickness.tsv")
+
+read_excel("D:/000博士毕业论文/表型数据/04.百粒重.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(HundredSeedWeight=mean(百粒重,na.rm = TRUE)) %>% 
+  rename("Taxa"="X1") %>% 
+  write_tsv("phdthesis/chapter4/data/pheno/04.HundredSeedWeight.tsv")
+
+read_excel("D:/000博士毕业论文/表型数据/05.籽粒硬度.xlsx") %>% 
+  group_by(X1) %>% 
+  summarise(SeedHardness=mean(`kg/cm2`,na.rm = TRUE)) %>% 
+  rename("Taxa"="X1") %>% 
+  write_tsv("phdthesis/chapter4/data/pheno/05.SeedHardness.tsv")
+
+
+read_tsv("phdthesis/chapter4/data/pheno/03.FruitPeelThickness.tsv") %>% 
+  filter(Taxa != "Ch_TNS") %>% 
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/04.HundredSeedWeight.tsv") %>% 
+              filter(Taxa != "Ch_TNS"),
+            by=c("Taxa"="Taxa")) %>% 
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/09.TitratableAcidity.tsv") %>% 
+              filter(Taxa != "Ch_TNS"),
+            by=c("Taxa"="Taxa")) %>% 
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/05.SeedHardness.tsv") %>% 
+              filter(Taxa != "Ch_TNS"),
+            by=c("Taxa"="Taxa")) %>%
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/01.singleFruitWeight.tsv"),
+            by=c("Taxa"="Taxa")) %>% 
+  column_to_rownames("Taxa") %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  rownames_to_column("geneid") -> gene
+
+write_tsv(gene,file = "phdthesis/chapter4/data/matrixEqtl/GE.txt")
+
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  column_to_rownames("geneid") %>% 
+  select(gene %>% column_to_rownames("geneid") %>% colnames()) %>% 
+  rownames_to_column("snpid") -> snps
+write_tsv(snps,file = "phdthesis/chapter4/data/matrixEqtl/SNP.txt")
+
+prcomp(snps %>% 
+         column_to_rownames("snpid") %>% 
+         t() %>% 
+         as.data.frame()) -> covar.dat
+
+covar.dat$x %>% 
+  as.data.frame() %>% 
+  select(1:10) %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  select(gene %>% column_to_rownames("geneid") %>% colnames()) %>% 
+  rownames_to_column("id") %>% 
+  write_tsv(file = "phdthesis/chapter4/data/matrixEqtl/Covariates.txt")
+
+## 用MatrixEqtl去做关联 https://github.com/andreyshabalin/MatrixEQTL/tree/master
+## gene PAV矩阵 做snp
+## 表型数据 做基因表达量
+## gene PAV矩阵 做主成分分析 作为协变量
+
+library(MatrixEQTL)
+
+SNP_file_name = "phdthesis/chapter4/data/matrixEqtl/SNP.txt"
+expression_file_name = "phdthesis/chapter4/data/matrixEqtl/GE.txt"
+covariates_file_name = "phdthesis/chapter4/data/matrixEqtl/Covariates.txt"
+
+snps = SlicedData$new()
+snps$fileDelimiter = "\t"      # the TAB character
+snps$fileOmitCharacters = "NA" # denote missing values
+snps$fileSkipRows = 1          # one row of column labels
+snps$fileSkipColumns = 1       # one column of row labels
+snps$fileSliceSize = 2000      # read file in pieces of 2,000 rows
+snps$LoadFile( SNP_file_name )
+
+
+gene = SlicedData$new()
+gene$fileDelimiter = "\t"      # the TAB character
+gene$fileOmitCharacters = "NA" # denote missing values
+gene$fileSkipRows = 1          # one row of column labels
+gene$fileSkipColumns = 1       # one column of row labels
+gene$fileSliceSize = 2000      # read file in pieces of 2,000 rows
+gene$LoadFile( expression_file_name )
+
+
+cvrt = SlicedData$new()
+cvrt$fileDelimiter = "\t"      # the TAB character
+cvrt$fileOmitCharacters = "NA" # denote missing values
+cvrt$fileSkipRows = 1          # one row of column labels
+cvrt$fileSkipColumns = 1       # one column of row labels
+cvrt$fileSliceSize = 2000      # read file in pieces of 2,000 rows
+cvrt$LoadFile( covariates_file_name )
+
+useModel = modelLINEAR
+pvOutputThreshold = 1e-2
+errorCovariance = numeric()
+output_file_name = "phdthesis/chapter4/data/matrixEqtl/eqtls.output"
+
+me = Matrix_eQTL_main(
+  snps = snps,
+  gene = gene,
+  cvrt = cvrt,
+  output_file_name = output_file_name,
+  pvOutputThreshold = pvOutputThreshold,
+  useModel = useModel,
+  errorCovariance = errorCovariance,
+  verbose = TRUE,
+  pvalue.hist = TRUE,
+  min.pv.by.genesnp = FALSE,
+  noFDRsaveMemory = FALSE)
+
+me$all$eqtls
+
+me$all$eqtls %>% 
+  pull(gene) %>% 
+  table()
+
+
+## 籽粒硬度转录组表达量 pan.raw.fq/11.SNP.smallInDel/02.YS.NoRef.Genome
+myfun<-function(x){read_tsv(x)%>%mutate(sampleid=str_extract(x,pattern = "SRR[0-9]+"))}
+
+## PRJNA377402 Tunisia Sanbai
+list.files("00.rnaseq/PRJNA377402/03.expression",pattern = "*_abund.tsv",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows() -> prjna377402.exp.dat
+save(prjna377402.exp.dat,file = "prjna377402.exp.dat.Rdata")
+
+## PRJNA548841 Tunisia Dabenzi
+list.files("00.rnaseq/PRJNA548841/03.expression",pattern = "*_abund.tsv",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows() -> prjna548841.exp.dat
+save(prjna548841.exp.dat,file = "prjna548841.exp.dat.Rdata")
+
+me$all$eqtls %>% 
+  filter(gene=="SeedHardness") %>% 
+  left_join(prjna548841.exp.dat %>% select(`Gene ID`,TPM,sampleid),
+            by=c("snps"="Gene ID")) %>% 
+  ggplot(aes(x=sampleid,y=TPM))+
+  geom_col()+
+  facet_wrap(~snps,scales = "free")+
+  theme(axis.text.x = element_text(angle=30,vjust=1,hjust = 1))
+
+## 两个基因有无对应籽粒硬度形状
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  filter(geneid=="ys007G001192") %>% 
+  select(read_tsv("phdthesis/chapter4/data/pheno/05.SeedHardness.tsv") %>% 
+           filter(Taxa != "Ch_TNS") %>% 
+           pull(Taxa)) %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  rownames_to_column("Taxa") %>% 
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/05.SeedHardness.tsv") %>% 
+              filter(Taxa != "Ch_TNS")) %>% 
+  ggplot(aes(x=factor(V1),y=SeedHardness))+
+  geom_boxplot()
+
+## 两个基因有无对应籽粒硬度形状
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  filter(geneid=="ys007G001193") %>% 
+  select(read_tsv("phdthesis/chapter4/data/pheno/05.SeedHardness.tsv") %>% 
+           filter(Taxa != "Ch_TNS") %>% 
+           pull(Taxa)) %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  rownames_to_column("Taxa") %>% 
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/05.SeedHardness.tsv") %>% 
+              filter(Taxa != "Ch_TNS")) %>% 
+  ggplot(aes(x=factor(V1),y=SeedHardness))+
+  geom_boxplot()
+
+## PRJNA628153 表达量
+list.files("00.rnaseq/PRJNA628153/03.expression",pattern = "*_abund.tsv",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows() -> prjna628153.exp.dat
+save(prjna628153.exp.dat,file = "prjna628153.exp.dat.Rdata")
+
+
 ```
