@@ -744,5 +744,17 @@ read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>%
 list.files("00.rnaseq/PRJNA628153/03.expression",pattern = "*_abund.tsv",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows() -> prjna628153.exp.dat
 save(prjna628153.exp.dat,file = "prjna628153.exp.dat.Rdata")
 
-
+## 某个基因的存在缺失与表型的箱线图
+read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
+  filter(geneid=="ys007G000369") %>% 
+  select(read_tsv("phdthesis/chapter4/data/pheno/09.TitratableAcidity.tsv") %>% 
+           filter(Taxa != "Ch_TNS") %>% 
+           pull(Taxa)) %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  rownames_to_column("Taxa") %>% 
+  left_join(read_tsv("phdthesis/chapter4/data/pheno/09.TitratableAcidity.tsv") %>% 
+              filter(Taxa != "Ch_TNS")) %>%
+  ggplot(aes(x=factor(V1),y=TitratableAcidity))+
+  geom_boxplot()
 ```
