@@ -141,11 +141,75 @@ tabix pome.indel.92.filter.recode.vcf.gz
 
 bcftools view -H pome.snp.92.filter.recode.vcf.gz -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8 | wc -l
 
+bcftools view -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8 pome.snp.92.filter.recode.vcf.gz -O v -o pome.snp.92.filter.onlyChr.vcf
+bcftools view -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8 pome.indel.92.filter.recode.vcf.gz -O v -o pome.indel.92.filter.onlyChr.vcf
+
+bcftools stats pome.snp.92.filter.onlyChr.vcf # 转换和颠换的比例
+```
+
+## 计算基因区间和基因间区 的snp数量
+
+```
+grep "gene" ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.rename.gff3 | awk '{print $1"\t"$4"\t"$5}' > gene.bed
+cat ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.Genome.fa.masked.fai | awk '{print $1"\t"$2}' > chr.len.bed
+
+bedtools sort -i gene.bed -g chr.len.bed > gene.sorted.bed
+bedtools complement -i gene.sorted.bed -g chr.len.bed > intergenic.bed
+```
+
+## annovar 变异位点相对于基因的位置
+
+```
+conda activate syri
+conda install ucsc-gtftogenepred
+conda install ucsc-gff3togenepred
+
+gffread ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/08.proteinCodingGenes/05.evm/ys/ys.rename.gff3 -T -o ys.gtf
+gtfToGenePred -genePredExt ys.gtf genome_refGene.txt
+~/biotools/annovar/retrieve_seq_from_fasta.pl --format refGene --seqfile ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.Genome.fa.masked --out genome_refGeneMrna.fa genome_refGene.txt
+
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq ../pome.snp.92.filter.recode.vcf > pome.snp.92.filter.annovar.input
+
+#NOTICE: Finished reading 954714 lines from VCF file
+#NOTICE: A total of 954669 locus in VCF file passed QC threshold, representing 954667 SNPs (634892 transitions and 319775 transversions) and 2 indels/substitutions
+#NOTICE: Finished writing allele frequencies based on 87829364 SNP genotypes (58410064 transitions and 29419300 transversions) and 184 indels/substitutions for 92 samples
+
+ ~/biotools/annovar/annotate_variation.pl -geneanno --neargene 2000 -buildver genome -dbtype refGene -outfile snp.anno -exonsort pome.snp.92.filter.annovar.input ./
+## -buildver 后面跟的内容就是genome_refGene.txt 这个文件的前缀名
+
+
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq ../pome.indel.92.filter.recode.vcf > pome.indel.92.filter.annovar.input
+
+#NOTICE: Finished reading 116337 lines from VCF file
+#NOTICE: A total of 116292 locus in VCF file passed QC threshold, representing 0 SNPs (0 transitions and 0 transversions) and 116292 indels/substitutions
+#NOTICE: Finished writing allele frequencies based on 0 SNP genotypes (0 transitions and 0 transversions) and 10698864 indels/substitutions for 92 samples
+
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 2000 -buildver genome -dbtype refGene -outfile indel.anno -exonsort pome.indel.92.filter.annovar.input ./
+```
+
+## snpEff 变异位点相对于基因的位置
+
+```
+java -Xmx4G -jar snpEff.jar build -gtf22 ys
 
 ```
 
-## 变异位点相对于基因的位置
+## 分染色体计算snp和indel的数量
 
 ```
+library(data.table)
+library(tidyverse)
 
+fread("pome.snp.92.filter.recode.vcf",skip = "#CHROM") -> snp.dat
+
+
+
+read_tsv("~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.Genome.fa.masked.fai",col_names = FALSE)%>%filter(str_starts(X1,"chr"))%>%select(1,2)%>%magrittr::set_colnames(c("X1","chrlen")) -> chr.len
+
+snp.dat%>%select(`#CHROM`)%>%group_by(`#CHROM`)%>%summarise(snpcount=n())%>%filter(str_starts(`#CHROM`,"chr")) -> snp.count
+
+fread("pome.indel.92.filter.recode.vcf",skip = "#CHROM") -> indel.dat
+indel.dat%>%select(`#CHROM`)%>%group_by(`#CHROM`)%>%summarise(indelcount=n())%>%filter(str_starts(`#CHROM`,"chr")) -> indel.count
+
+chr.len%>%left_join(snp.count,by=c("X1"="#CHROM"))%>%left_join(indel.count,by=c("X1"="#CHROM"))%>%write_tsv("chrlen_snp_indel_num.txt")
 ```
