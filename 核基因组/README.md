@@ -1,3 +1,9 @@
+### 三代测序数据统计
+
+```
+NanoPlot -t 24 --N50 --dpi 300 --fastq ys.nanopore.fq.gz --title ys -o ys_NanoPlot.output
+```
+
 ### 桃金娘目的基因组Helixer注释
 
 ```
@@ -176,6 +182,37 @@ myExonNum<-function(x){
 
 list.files("all.genomes",pattern = "*.gff3",full.names = TRUE)%>%map(myExonNum)%>%bind_rows()%>%write_tsv("allGenesExonNum.txt")
 
+read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/01.coreGene.txt",col_names=FALSE)  %>% 
+  mutate(group="Core") %>% 
+  bind_rows(
+    read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/02.dispensableGene.txt",col_names=FALSE)  %>% 
+      mutate(group="Dispensable") 
+  ) %>% 
+  bind_rows(
+    read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/03.privateGene.txt",col_names=FALSE)  %>% 
+      mutate(group="Private") 
+  ) %>% 
+  inner_join(read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/allGenesExonNum.txt",col_names=TRUE),
+             by=c("X1"="ID")) %>% 
+  ggplot(aes(x=group,y=log2(count)))+
+  geom_boxplot()
+
+
+read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/01.coreGene.txt",col_names=FALSE)  %>% 
+  mutate(group="Core") %>% 
+  bind_rows(
+    read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/02.dispensableGene.txt",col_names=FALSE)  %>% 
+      mutate(group="Dispensable") 
+  ) %>% 
+  bind_rows(
+    read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/03.privateGene.txt",col_names=FALSE)  %>% 
+      mutate(group="Private") 
+  ) %>% 
+  inner_join(read_tsv("D:/Jupyter/panPome/Figures/第一章_核基因组/泛基因家族/allGenesLength.txt",col_names=TRUE),
+             by=c("X1"="ID")) %>% 
+  ggplot(aes(x=group,y=log2(width)))+
+  geom_boxplot()
+
 ## 提取单拷贝cds 计算kaks 和核苷酸多样性
 python extractCDSfromtotal.py CoreSingleCopyFamilyIDs.txt
 conda activate doubletrouble
@@ -216,6 +253,13 @@ snakemake -s gffread.smk --cores 128 -p
 snakemake -s statPEPnum.smk --cores 128 -p
 
 time orthofinder -f all.peps/ -M msa -S diamond -T fasttree -a 120 -t 120
+
+mkdir iqtree.output
+
+cp ../all.peps/OrthoFinder/Results_Apr01/MultipleSequenceAlignments/SpeciesTreeAlignment.fa ./
+clipkit SpeciesTreeAlignment.fa
+
+time iqtree2 -s SpeciesTreeAlignment.fa.clipkit -B 1000 -o Vitis_vinifera -T AUTO
 ```
 
 ## 基因家族收缩扩张
