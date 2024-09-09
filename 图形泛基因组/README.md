@@ -115,11 +115,23 @@ read_csv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/ins.len",
 ~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort merged.SURVIVOR.annovar.input ~/my_data/raw_data/practice/annovar/
 cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
 
+bcftools view merged.SURVIVOR.vcf -i 'strlen(REF) > 50 || strlen(ALT) > 50' -O v -o merged.SURVIVOR.largerThan50.vcf
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq merged.SURVIVOR.largerThan50.vcf > merged.SURVIVOR.largerThan50.annovar.input
+
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile merged.SURVIVOR.largerThan50.annovar.output -exonsort merged.SURVIVOR.largerThan50.annovar.input ~/my_data/raw_data/practice/annovar/
 ```
 
 ### 图形泛基因组合并92个样本的vcf
 
 ```
+
+## 路径 sour.pome/20231015.reanalysis/13.panGenomeVG/12.InDels/01.vg
+vcfsort merged.SURVIVOR.largerThan50.vcf > merged.SURVIVOR.largerThan50.sorted.vcf ## 需要给vcf文件添加染色体长度信息
+bgzip merged.SURVIVOR.largerThan50.sorted.vcf
+tabix merged.SURVIVOR.largerThan50.sorted.vcf.gz
+
+time vg autoindex --workflow giraffe -r ../../ys.onlyChr.masked.fna -v merged.SURVIVOR.largerThan50.sorted.vcf.gz -p pome -t 24
+
 snakemake -s bgzip_vcf.smk --cores 24 -p
 vcftools --vcf merged.vcf --max-missing 0.8 --maf 0.05 --min-alleles 2 --max-alleles 2 --recode --recode-INFO-all --out merged92.vg.filter
 #2103
