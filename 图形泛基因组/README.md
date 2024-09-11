@@ -688,3 +688,48 @@ read_tsv("merged92.vg.filter.recode.vcf",comment = "##")%>%mutate(across(contain
 grep "##" merged92.vg.filter.recode.vcf > 02.vcf
 cat 02.vcf 01.vcf > popdecayInput.vcf
 ```
+
+
+### emmax 关联分析
+
+```
+bcftools view -S ../../../../../20240602.reanalysis/01.snp.indel/06.gwas/01.snp/26.samples.with.pheno.txt ../../11.mergedvcf/merged92.vg.filter.recode.vcf > merged26.vg.filter.recode.vcf
+~/biotools/software.package/bcftools-1.17/bcftools reheader -s ../../../../../20240602.reanalysis/01.snp.indel/06.gwas/01.snp/26.samples.with.pheno.new.name merged26.vg.filter.recode.vcf > merged26.vg.filter.recode.new.name.vcf
+
+plink --vcf ../merged26.vg.filter.recode.new.name.vcf --make-bed --out pome.SV.26
+java -jar -Xmx8g ~/biotools/GEC/gec/gec.jar --effect-number --plink-binary pome.SV.26 --genome --out pome.SV.26
+
+plink --vcf ../merged26.vg.filter.recode.new.name.vcf --make-bed --out pome.SV.26
+plink --bfile pome.SV.26 --recode 12 transpose --out pome.SV.26
+
+~/biotools/emmax/emmax-kin-intel64 -v -d 10 pome.SV.26
+
+```
+
+### sv indel snp 连锁不平衡
+
+```
+python 20240524_01.py ../../../11.mergedvcf/merged92.vg.filter.recode.vcf merged92.vg.filter.edited.vcf
+~/biotools/PopLDdecay-3.42/bin/PopLDdecay -InVCF merged92.vg.filter.edited.vcf -OutStat SV.LDdecay
+perl ~/biotools/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile SV.LDdecay.stat.gz -output SV.Fig
+
+plink --vcf merged92.vg.filter.edited.vcf --maf 0.05 --geno 0.1 --mind 0.5 --thin 0.4 -r2 gz --ld-window 100 --ld-window-kb 1000 --ld-window-r2 0 --make-bed --out pome.sv
+
+## snp indel sv
+python 20240524_02.py ~/biotools/deepVariant/pome/pome.snp.92.filter.onlyChr.vcf pome.snp.92.filter.onlyChr.edited.vcf
+python 20240524_02.py ~/biotools/deepVariant/pome/pome.indel.92.filter.onlyChr.vcf pome.indel.92.filter.onlyChr.edited.vcf
+
+bgzip pome.snp.92.filter.onlyChr.edited.vcf
+tabix pome.snp.92.filter.onlyChr.edited.vcf.gz
+
+bgzip pome.indel.92.filter.onlyChr.edited.vcf
+tabix pome.indel.92.filter.onlyChr.edited.vcf.gz
+
+bgzip ../01.sv/merged92.vg.filter.edited.vcf -c > pome.sv.92.onlyChr.edited.vcf.gz
+tabix pome.sv.92.onlyChr.edited.vcf.gz
+
+vcfcat pome.snp.92.filter.onlyChr.edited.vcf.gz pome.indel.92.filter.onlyChr.edited.vcf.gz pome.sv.92.onlyChr.edited.vcf.gz > merged.snp.indel.sv.vcf
+vcfsort merged.snp.indel.sv.vcf > merged.snp.indel.sv.sorted.vcf
+
+plink --vcf merged.snp.indel.sv.sorted.vcf --maf 0.05 --geno 0.1 --mind 0.5 --thin 0.4 -r2 gz --ld-window 100 --ld-window-kb 1000 --ld-window-r2 0 --make-bed --vcf-half-call r --out merged.snp.indel.sv
+```
