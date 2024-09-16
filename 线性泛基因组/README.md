@@ -195,6 +195,10 @@ list.files("02.megahit.stats",pattern = "*.txt",full.names = TRUE,recursive = FA
 
 dat%>%filter(str_detect(file,"_"))%>%arrange(desc(num_seqs))
 dat%>%filter(str_detect(file,"_"))%>%arrange(num_seqs)
+
+list.files("02.megahit.stats",pattern = "*.txt",recursive = TRUE,full.names = TRUE)%>%map(read_tsv)%>%bind_rows()%>%select(file,num_seqs,sum_len,min_len,avg_len,max
+    _len,N50,`GC(%)`)%>%mutate(sum_len=round(sum_len/1000000,2),file=str_replace(file,pattern=".contigs.fa","")%>%str_replace(pattern="02.megahit.output.rename/",""))%>
+    %write_csv("megahit.stats.txt")
 ```
 ## 统计quast 没有比对上的序列数量
 
@@ -210,6 +214,14 @@ dat%>%filter(str_starts(Contig,pattern = "Ch|Ti|Gl"))%>%filter(Unaligned_type=="
 ## 局部没有比对的序列
 dat%>%filter(str_starts(Contig,pattern = "Ch|Ti|Gl"))%>%filter(Unaligned_type!="full")%>%filter(Unaligned_length/Total_length>=0.5)%>%mutate(group=str_extract(Contig,pattern =".*_k"))%>%select(-5)%>%group_by(group)%>%summarise(count=n())%>%pull(count)%>%sum()
 
+
+quast.dat%>%filter(Unaligned_type=="full")%>%mutate(Contig=str_extract(Contig,pattern = ".*?_k"))%>%group_by(Contig)%>%summarise(full_total_length=sum(Total_length)
+    ,full_unaligned_length=sum(Unaligned_length),full_unaligned_contig=n()) -> quast_full
+
+quast.dat%>%filter(Unaligned_type=="partial")%>%filter(Unaligned_length/Total_length>=0.5)%>%mutate(Contig=str_extract(Contig,pattern = ".*?_k"))%>%group_by(Contig)
+    %>%summarise(partial_total_length=sum(Total_length),partial_unaligned_length=sum(Unaligned_length),partial_unaligned_contig=n()) -> quast_partial
+
+quast_full%>%left_join(quast_partial)%>%mutate(Contig=str_replace(Contig,pattern="_k",""))%>%write_csv("quast.stat.txt")
 ```
 ## 用基因组序列去跑BUSCO
 
@@ -226,6 +238,11 @@ snakemake -s busco.smk --cores 128 -p
 time busco -i 02.megahit.output.rename/Ch_BHYSZ.contigs.fa -l /home/myan/my_data/database/embryophyta_odb10 -o 02.megahit.busco.output -m genome --force --offline --augustus --cpu 12
 ## 34 min
 snakemake -s busco.smk --cores 128 -p
+
+## 合并所有busco的结果
+paste0(list.dirs("02.megahit.busco.output/",recursive = FALSE),"/busco_output/run_embryophyta_odb10/short_summary.json")%>%map(read_busco)%>%bind_rows()%>%mutate(sa
+    mpleid=str_replace(sampleid,pattern="/data/myan/raw_data/pome/pan.raw.fq/02.megahit.output.rename/","")%>%str_replace(".contigs.fa",""))%>%write_csv("busco.stat.txt
+    ")
 ```
 
 ## 非参考序列中蛋白编码基因长度 外显子数量
@@ -373,9 +390,46 @@ resistify ../08.proteinCodingGenes/05.evm/ys/ys.pep.fa ref.resistify.output
 ## 运行了2个多小时
 ```
 
+## 抗病基因簇
+
+```
+read_tsv("D:/Jupyter/panPome/gene.bed",col_names = FALSE) %>% 
+  mutate(X4=paste0(X4,".mRNA1")) %>% 
+  filter(str_starts(X1,"chr")) %>% 
+  arrange(X1,X2) %>% 
+  write_tsv("phdthesis/chapter5/data/chr.gene.sorted.bed",
+            col_names = FALSE)
+
+read_tsv("phdthesis/chapter5/data/ref_NLRs/results.tsv") %>% 
+  pull(Sequence) %>% 
+  write_lines("phdthesis/chapter5/data/NLR.gene.list")
+
+python makeRGeneClusterAnalysis.py NLR.gene.list chr.gene.sorted.bed > NLR.gene.cluster
+
+```
+
+## 抗病基因区间内的SNP数量
+
+
 ## 基因存在缺失矩阵构建进化树
 
 ```
+## 西藏石榴和现代栽培石榴基因数量比较
+read_tsv("phdthesis/chapter5/data/genePAV92.matrix") %>% 
+  column_to_rownames("geneid") %>% 
+  colSums() %>% 
+  as.data.frame() %>% 
+  magrittr::set_colnames("genenum") %>% 
+  rownames_to_column() %>% 
+  mutate(group=str_sub(rowname,1,2)) %>% 
+  mutate(group=case_when(
+    group == "Ti" ~ "Ti",
+    TRUE ~ "NonTi"
+  )) %>% 
+  ggplot(aes(x=group,y=genenum))+
+  geom_boxplot()
+
+
 read_tsv("phdthesis/chapter4/data/genePAV92.matrix") %>% 
   column_to_rownames("geneid") %>%
   t() %>% 
@@ -559,6 +613,24 @@ enricher(paste0(c(fav.gene.01,fav.gene.02),".mRNA1"),
          qvalueCutoff = 0.05) -> fav.CC.go
 
 dotplot(fav.CC.go)
+```
+
+## 核心基因 可变基因
+
+```
+read_tsv("phdthesis/chapter5/data/genePAV92.matrix") %>% 
+  column_to_rownames("geneid") %>% 
+  rowSums() %>% 
+  as.data.frame() %>% 
+  magrittr::set_colnames("count") %>% 
+  rownames_to_column("geneid") %>% 
+  mutate(group=case_when(
+    count == 92 ~ "Core",
+    count < 92 & count >= 83 ~ "SoftCore",
+    count > 1 & count <83 ~ "Dispensable",
+    count == 1 ~ "Private"
+  )) %>% 
+  pull(group) %>% table()
 ```
 
 ## 基因PAV与表型的关联分析
