@@ -410,6 +410,76 @@ python makeRGeneClusterAnalysis.py NLR.gene.list chr.gene.sorted.bed > NLR.gene.
 
 ## 抗病基因区间内的SNP数量
 
+```
+read_tsv("phdthesis/chapter5/data/ref_NLRs/results.tsv") %>% 
+  left_join(read_tsv("D:/Jupyter/panPome/gene.bed",col_names = FALSE) %>% 
+              mutate(X4=paste0(X4,".mRNA1")),
+            by=c("Sequence"="X4")) %>% 
+  select(X1,X2,X3,Sequence) %>% 
+  write_tsv("phdthesis/chapter5/data/refNLR.gene.bed",
+            col_names = FALSE)
+
+bcftools view -H ~/biotools/deepVariant/pome/pome.snp.92.filter.recode.vcf | awk '{print $1"\t"$2"\t"$2+1}' > snp.bed
+bedtools coverage -a refNLR.gene.bed -b snp.bed -counts > refNLR.gene.snp.counts
+```
+
+## PRJNA753992 基因表达
+
+```
+myfun<-function(x){read_tsv(x)%>%mutate(sampleid=str_extract(x,pattern = "SRR[0-9]+"))}
+list.files(".",pattern = "*_abund.tsv",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows() -> prjna753992.exp.dat
+
+save(prjna753992.exp.dat,file = "prjna753992.exp.dat.Rdata")
+
+## 差异表达分析
+
+prjna753992.exp.dat %>% 
+  select(`Gene ID`,Coverage,sampleid) %>% 
+  mutate(across(Coverage,round)) %>% 
+  pivot_wider(names_from = "sampleid",values_from = "Coverage") %>% 
+  column_to_rownames("Gene ID") -> prjna753992.count
+
+colnames(prjna753992.count)
+
+prjna753992.count[rowSums(prjna753992.count) != 0,] -> prjna753992.count.filter
+prjna753992.metainfo<-data.frame(id=colnames(prjna753992.count.filter),
+                                 dex=rep(c("ctl","trt"),each=3))
+
+prjna753992.metainfo
+
+library(DESeq2)
+
+dds<-DESeqDataSetFromMatrix(
+  countData = prjna753992.count.filter,
+  colData = prjna753992.metainfo,
+  design = ~dex
+)
+dds<-DESeq(dds)
+prjna753992.de.res<-results(dds)
+prjna753992.de.res %>% 
+  as.data.frame() %>% 
+  rownames_to_column("geneid") %>% 
+  mutate(group=case_when(
+    log2FoldChange >=1 & pvalue <=0.05 ~ "Up",
+    log2FoldChange <= -1 & pvalue <=0.05 ~ "Down",
+    TRUE ~ "Not Change"
+  )) %>% 
+  filter(group!="Not Change") %>% 
+  mutate(geneid=paste0(geneid,".mRNA1")) %>% 
+  inner_join(read_tsv("phdthesis/chapter5/data/NLR.gene.cluster",
+                      col_names = FALSE) %>% 
+               mutate(X2=str_count(X1,".mRNA1")) %>% 
+               mutate(X3=case_when(
+                 X2 == 1 ~ "singleton",
+                 X2 > 1 ~ "cluster"
+               )) %>% 
+               separate(X1,sep = ", ",paste0("col",1:10)) %>% 
+               select(-X2) %>% 
+               pivot_longer(!X3) %>% 
+               na.omit(),
+             by=c("geneid"="value"))
+```
+
 
 ## 基因存在缺失矩阵构建进化树
 
