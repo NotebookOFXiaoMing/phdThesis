@@ -295,6 +295,17 @@ cat emapper/*.annotations | grep -v "#" | awk -v FS="\t" '{print $10"\t"$1}' | g
 python getTerm2Gene.py Term2Gene.temp Term2Gene.txt
 ```
 
+## 泛基因家族中的基因表达
+
+```
+## 只用 ys 参考基因组中的基因
+## 路径 pan.raw.fq/11.SNP.smallInDel/01.YS.Genome/00.rnaseq/
+myfun<-function(x){read_tsv(x)%>%mutate(sampleid=str_extract(x,pattern="SRR[0-9]+"))}
+
+list.files(".",pattern = "*_abund.tsv",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows()%>%select(`Gene ID`,sampleid,TPM) -> exp.dat
+exp.dat%>%pivot_wider(names_from = "sampleid",values_from = "TPM")%>%write_tsv("ys.ref.exp.matrix.txt")
+```
+
 ## 桃金娘目系统发育树
 
 ```
