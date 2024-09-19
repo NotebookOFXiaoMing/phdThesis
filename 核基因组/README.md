@@ -106,6 +106,7 @@ filterStainedGlass(chr.name = "chr8",chr.start = 15400000,chr.end = 17300000,out
 ### 可能得着丝粒区域和串联重复区取交集
 
 ```
+
 cat ../chr1/all.repeats.from.chr1.fna.csv | grep -v "start" | awk -v FS="," '{print "chr1\t"$1"\t"$2"\t"$3"\t"$4}' > chr1.repeats.bed
 bedtools intersect -a chr1.bed -b chr1.repeats.bed -wa -wb > chr1.candidate.centrometer.repeat
 
@@ -128,10 +129,15 @@ bedtools intersect -a chr7.bed -b chr7.repeats.bed -wa -wb > chr7.candidate.cent
 
 cat ../chr8/all.repeats.from.chr8.fna.csv | grep -v "start" | awk -v FS="," '{print "chr8\t"$1"\t"$2"\t"$3"\t"$4}' > chr8.repeats.bed
 bedtools intersect -a chr8.bed -b chr8.repeats.bed -wa -wb > chr8.candidate.centrometer.repeat
+
+
+
 ```
 
 ### 着丝粒区域的TE
 ```
+## 路径 20231015.reanalysis/22.trash/01.bedtools.intersect
+
 cat ../../06.repeatModulerRepeatMaskerafterNextpolish/ys.repeatmasker/genome.nextpolish.upperbase.fasta.out | awk '{print $5"\t"$6"\t"$7"\t"$11}' | grep "chr" > chr.TE.bed
 bedtools intersect -a chr.candidate.centrometer.bed -b chr.TE.bed -wa -wb > candidate.centrometer.TE.type
 
@@ -149,6 +155,53 @@ bedtools intersect -a chr.non.candidate.centrometer.bed01 -b ../../08.proteinCod
 
 grep "gene" ../../08.proteinCodingGenes/05.evm/ys/ys.rename.gff3 | grep "chr" | awk '{print $1"\t"$4"\t"$5"\t"$9}' | awk 'gsub("ID=","")' > gene.bed
 bedtools intersect -a chr.candidate.centrometer.bed -b gene.bed -wa -wb | wc -l #140
+
+bedtools intersect -a chr.candidate.centrometer.bed -b gene.bed -wa -wb | awk '{print $7}' > chr.candidate.centrometer.140genes
+
+## GO富集分析
+library(clusterProfiler)
+
+GOinfo<-read_tsv("phdthesis/chapter4/data/go.tb")
+GOinfo
+
+GOannotation <- read_tsv("phdthesis/chapter4/data/ref.output/GOannotation.tsv") %>% 
+  filter(GO!="-")
+GOannotation
+
+centrometer.gene.list<-read_lines("phdthesis/chapter2/data/chr.candidate.centrometer.140genes")%>% 
+  paste0(".mRNA1")
+centrometer.gene.list 
+
+enricher(centrometer.gene.list,
+         TERM2GENE = GOannotation %>% 
+           filter(level=="MF") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05)
+
+enricher(centrometer.gene.list,
+         TERM2GENE = GOannotation %>% 
+           filter(level=="BP") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) %>% 
+  dotplot()+
+  theme(panel.grid = element_blank())+
+  labs(title = "Biological Processes") -> p10
+
+enricher(centrometer.gene.list,
+         TERM2GENE = GOannotation %>% 
+           filter(level=="CC") %>% 
+           select(2,1),
+         TERM2NAME = GOinfo[1:2],
+         pvalueCutoff = 0.05,
+         qvalueCutoff = 0.05) %>% 
+  dotplot()+
+  theme(panel.grid = element_blank())+
+  labs(title = "Cell Components") -> p11
+
 ```
 
 
