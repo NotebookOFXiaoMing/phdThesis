@@ -331,6 +331,13 @@ time iqtree2 -s SpeciesTreeAlignment.fa.clipkit -B 1000 -o Vitis_vinifera -T AUT
 ```
 time orthofinder -f allpeps -M msa -S diamond -T fasttree -a 120 -t 120
 
+## gene_family_filter.txt 是geneCount文件编辑来的
+## nwk文件是从网上下载的
+
+~/anaconda3/envs/orthofinder/bin/cafe5 -i gene_family_filter.txt -t SevenSpecies.nwk -o baseModel.output -c 12
+
+grep "OG0000049" baseModel.output/Base_asr.tre | awk 'gsub("  TREE OG0000049 = ","")' > cafe5.out.tree
+
 read_tsv("../11.orthofinder/emapper/ys.emapper.annotations",comment = "##")%>%
 select(`#query`,BRITE)%>%
 filter(BRITE!="-")%>%select(2,1)%>%write_tsv("keggTerm2Gene.temp",col_names = FALSE)
