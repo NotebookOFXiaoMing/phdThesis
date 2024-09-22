@@ -331,6 +331,27 @@ plink --allow-extra-chr --file pome.indel --indep-pairwise 50 5 0.1 --recode vcf
 plink --allow-extra-chr --file pome.indel --recode vcf-iid --extract pome.indel.LDpruned.prune.in --out pome.indel.LDpruned
 
 ~/biotools/VCF2PCACluster-1.40/bin/VCF2PCACluster -InVCF pome.indel.LDpruned.vcf -OutPut pome.indel.PCA
+
+## 参考
+http://www.iqtree.org/doc/Tutorial
+https://github.com/iqtree/iqtree2/issues/111
+
+
+## snp INDEL数据转换成 012 matrix
+
+read_tsv("pome.snp.LDpruned.vcf",comment = "##")%>%select(-(1:9))%>%rowwise()%>%mutate(across(everything(),myfunConverSNPTo012))%>%t()%>%as.data.frame()%>%unite("ne
+    wcol",everything(),sep="")%>%rownames_to_column()%>%write_delim("snp012.phy",delim = " ")
+
+## 手动编辑表头
+
+## iqtree太慢了
+## 还是nj树吧
+
+https://www.jianshu.com/p/667347aaa0b9
+
+vcfsamplenames ~/biotools/deepVariant/pome/pome.snp.92.filter.recode.vcf > vcf.sample.names
+~/biotools/VCF2Dis-1.47/bin/VCF2Dis -InPut pome.indel.LDpruned.vcf -OutPut pome.indel.dist
+
 ```
 
 ## 核苷酸多样性
