@@ -137,6 +137,18 @@ vcftools --vcf merged.vcf --max-missing 0.8 --maf 0.05 --min-alleles 2 --max-all
 #2103
 ```
 
+### 系统发育树和PCA
+
+```
+## 路径 13.panGenomeVG/11.mergedvcf
+~/biotools/VCF2Dis-1.47/bin/VCF2Dis -InPut merged92.vg.filter.recode.vcf -OutPut largeINDEL.dist
+
+## 在线程序构建NJ树 http://www.atgc-montpellier.fr/fastme/
+
+python 20240524_01.py merged92.vg.filter.recode.vcf merged92.vg.filter.recode.edited.vcf ##把alt ref改成 单碱基的形式
+~/biotools/VCF2PCACluster-1.40/bin/VCF2PCACluster -InVCF merged92.vg.filter.recode.edited.vcf -OutPut largeINDEL
+```
+
 ### 纯合有利变异
 
 ```
@@ -314,6 +326,18 @@ python favorableSVvcf.py sites.txt merged92.vg.filter.recode.vcf out.vcf
 ~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq out.vcf > all.indel.vcf.annovar.input
 ~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort all.indel.vcf.annovar.input ~/my_data/raw_data/practice/annovar/
 cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+## 20240923
+python favorableSVvcf.py favorableSV.sites merged92.vg.filter.recode.vcf merged92.vg.favorableSV.vcf
+
+cd favorableSV.annovar/
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq ../merged92.vg.favorableSV.vcf > annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort annovar.input ~/my_data/raw_data/practice/annovar/
+cat all.anno.variant_function | awk '{print $1}' | sort | uniq -c
+
+python favorableSVvcf.py unfavorableSV.sites merged92.vg.filter.recode.vcf merged92.vg.unfavorableSV.vcf
+~/biotools/annovar/convert2annovar.pl -format vcf4 -allsample -withfreq ../merged92.vg.unfavorableSV.vcf > annovar.input
+~/biotools/annovar/annotate_variation.pl -geneanno --neargene 3000 -buildver genome -dbtype refGene -outfile all.anno -exonsort annovar.input ~/my_data/raw_data/practice/annovar/
 
 
 read_tsv("D:/Jupyter/panPome/Figures/结构变异图形泛基因组/有利变异位点all.anno.variant_function",
@@ -703,6 +727,43 @@ plink --vcf ../merged26.vg.filter.recode.new.name.vcf --make-bed --out pome.SV.2
 plink --bfile pome.SV.26 --recode 12 transpose --out pome.SV.26
 
 ~/biotools/emmax/emmax-kin-intel64 -v -d 10 pome.SV.26
+
+```
+
+## 单果重SV GWAS
+### 转录组数据 https://www.ncbi.nlm.nih.gov/sra?linkname=bioproject_sra_all&from_uid=231033 Nana Black 127
+### 路径 13.panGenomeVG/12.svGwas/04.emmax/03.gwas.output/01.fruit.weight/rnaseq
+```
+~/biotools/kingfisher/bin/kingfisher get -r SRR1054190 -m ena-ftp Black 127
+~/biotools/kingfisher/bin/kingfisher get -r SRR1055290 -m ena-ftp Nana
+
+vg giraffe -Z ../../../../../pomeSV.giraffe.gbz -m ../../../../../pomeSV.min -d ../../../../../pomeSV.dist -f SRR1054190.fastq.gz --threads 12 > SRR1054190.gam
+vg giraffe -Z ../../../../../pomeSV.giraffe.gbz -m ../../../../../pomeSV.min -d ../../../../../pomeSV.dist -f SRR1055290.fastq.gz --threads 12 > SRR1055290.gam
+
+vg pack -x ../../../../../pomeSV.giraffe.gbz -g SRR1054190.gam -o SRR1054190.pack -t 12
+vg pack -x ../../../../../pomeSV.giraffe.gbz -g SRR1055290.gam -o SRR1055290.pack -t 12
+
+vg call ../../../../../pomeSV.giraffe.gbz -k  SRR1055290.pack -a -s SRR1055290 -t 12 > SRR1055290.vcf  #8566839 位点缺失 8729577 位点为1/1
+vg call ../../../../../pomeSV.giraffe.gbz -k  SRR1054190.pack -a -s SRR1054190 -t 12 > SRR1054190.vcf  #8566839 位点缺失 8729577 位点为1/1
+
+## 表达量
+hisat2-build ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.Genome.fa.masked rnaseq.index/ys
+fastp -i SRR1054190.fastq.gz -o SRR1054190.clean.fq
+hisat2 -p 12 -x rnaseq.index/ys -U SRR1054190.fastq.gz -S SRR1054190.sam
+samtools sort -@ 12 -O BAM -o SRR1054190.sorted.bam SRR1054190.sam
+
+stringtie -p 8 -G ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.rename.gff3 -e -B -o tringtie.output/SRR1054190/SRR1054190.gtf -A tringtie.output/SRR1054190/SRR1054190.gene_abund.tsv SRR1054190.sorted.bam
+
+hisat2 -p 12 -x rnaseq.index/ys -U SRR1055290.fastq.gz -S SRR1055290.sam
+samtools sort -@ 12 -O BAM -o SRR1055290.sorted.bam SRR1055290.sam
+
+stringtie -p 8 -G ~/my_data/raw_data/pome/sour.pome/20231015.reanalysis/11.orthofinder/all.genomes/ys.rename.gff3 -e -B -o tringtie.output/SRR1055290/SRR1055290.gtf -A tringtie.output/SRR1054190/SRR1055290.gene_abund.tsv SRR1055290.sorted.bam
+
+
+## 用Nana的基因组测序数据试试
+vg giraffe -Z pomeSV.giraffe.gbz -m pomeSV.min -d pomeSV.dist -f ../../../Nana_L2_A022.R1.clean.fastq.gz -f ../../../Nana_L2_A022.R2.clean.fastq.gz --threads 24 > 07.gam/Nana.gam
+vg pack -x pomeSV.giraffe.gbz -g 07.gam/Nana.gam -o 08.pack/Nana.pack -t 24
+vg call pomeSV.giraffe.gbz -k 08.pack/Nana.pack -a -s nana -t 24 > 09.vcf/Nana.vcf
 
 ```
 
