@@ -454,6 +454,21 @@ plink --bfile pome.indel.26 --recode 12 transpose --out pome.indel.26
 
 ## GWAS关联 indel 写个批量吧
 
+
+## ys001G003539 基因在三个白石榴里的变异 igv
+
+```
+time bwa index ref/ys.final.masked.fna
+snakemake -s threeWhitePomeBWA.smk --cores 48 -p
+grep "001G003539" ../../../../00.reference/ys.final.masked.gff3
+
+samtools view 01.sorted.bam/Ch_TSSB.sorted.bam chr1:60855000-60856700 -b > Ch_TSSB.LDOX.bam
+samtools view 01.sorted.bam/Ch_SB.sorted.bam chr1:60855000-60856700 -b > Ch_SB.LDOX.bam
+
+bcftools view -r chr1:60855000-60856700 pome.snp.filter.recode.vcf.gz | less -S
+
+```
+
 snakemake -s indelGWAS.smk --cores 8 -p
 
 
