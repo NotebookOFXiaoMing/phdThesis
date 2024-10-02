@@ -480,6 +480,14 @@ prjna753992.de.res %>%
              by=c("geneid"="value"))
 ```
 
+##PRJNA361285 表达量
+
+```
+myfun<-function(x){read_tsv(x)%>%mutate(sampleid=str_extract(x,pattern = "SRR[0-9]+"))}
+list.files("03.expression/",pattern = "*gene*",recursive = TRUE,full.names = TRUE)%>%map(myfun)%>%bind_rows() -> prjna361285.exp.dat
+save(prjna361285.exp.dat,file = "prjna361285.exp.dat.Rdata")
+```
+
 
 ## 基因存在缺失矩阵构建进化树
 
