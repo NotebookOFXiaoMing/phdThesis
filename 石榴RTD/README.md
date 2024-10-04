@@ -222,3 +222,68 @@ tpm.gene[tpm.gene <= 0.5] <- 0
 tpm.gene[rowSums(tpm.gene) >= 1,]%>%write_delim(col_names = FALSE,file = "tpm.gene.01.matrix",delim = "")
 
 ```
+
+## 数据路径
+
+```
+## 20231015.reanalysis/24.pomeRTD/05.salmon.quant
+## 核心基因 转录本
+load("txi.salmon.Rdata")
+
+rtracklayer::import("pome.filtered.gtf")%>%as.data.frame()%>%filter(type=="transcript")%>%select(transcript_id) -> contained.trans
+rtracklayer::import("pome.filtered.gtf")%>%as.data.frame()%>%filter(type=="transcript")%>%select(gene_id)%>%distinct()%>%dim()
+
+rtracklayer::import("pome.filtered.gtf")%>%as.data.frame()%>%filter(type=="transcript")%>%select(gene_id)%>%distinct() -> contained.genes
+txi.salmon.transcript$abundance%>%as.data.frame()%>%rownames_to_column("trans_id")%>%inner_join(contained.trans,by=c("trans_id"="transcript_id"))%>%write_tsv("pomeR
+    TD.transcript.274.TPM.txt")
+
+txi.salmon.gene$abundance%>%as.data.frame()%>%rownames_to_column("gene_id")%>%inner_join(contained.genes,by=c("gene_id"="gene_id"))%>%write_tsv("pomeRTD.gene.274.TP
+    M.txt")
+
+
+grep ",Coding," transuite.output/pome_TranSuite_output/pome_transfeat/pome_transfeat.csv | awk -F, '{print $1}' | sort -u | uniq | wc -l
+
+grep ",Coding," transuite.output/pome_TranSuite_output/pome_transfeat/pome_transfeat.csv | awk -F, '{print $1}' | sort -u > pomeRTD.coding.gene.ids
+
+
+## 基因共表达网络
+
+data.table::fread("phdthesis/chapter6/data/pomeRTD.gene.274.TPM.txt.gz") %>% 
+  inner_join(read_tsv("phdthesis/chapter6/data/pomeRTD.coding.gene.ids",col_names = FALSE),
+             by=c("gene_id"="X1")) -> pome.RTD.coding.gene.exp
+
+
+myfun<-function(x){
+  length(which(x>0.5))
+}
+
+pome.RTD.coding.gene.exp %>% 
+  #column_to_rownames("gene_id") %>% 
+  dplyr::rowwise() %>% 
+  mutate(group=myfun(c_across(starts_with("SRR")))) %>%
+  filter(group>=55) %>% 
+  dplyr::select(-group) -> pome.RTD.coding.gene.exp.filter
+
+pome.RTD.coding.gene.exp.filter %>% column_to_rownames("gene_id") %>%
+  .[1:5,1:5]
+
+pcc <- cor(pome.RTD.coding.gene.exp.filter %>% 
+             column_to_rownames("gene_id") %>% 
+             t(), method = "pearson")
+pcc[1:5,1:5]
+write.table(pcc, file = "phdthesis/chapter6/data/pomeRTD.coding.gene.pcc.matrix", quote = F)
+write.table(pcc, file = "phdthesis/chapter6/data/pomeRTD.coding.gene.pcc.matrix", quote = F)
+
+python ~/my_data/raw_data/practice/GCN/computing_HRR_matrix_TOP420.py -p pomeRTD.coding.gene.pcc.matrix -o HRR.matrix -t 8
+time python ~/my_data/raw_data/practice/GCN/top1_co_occurrence_matrix_version2_TOP420_removing_ties.py -p HRR.matrix -c non_agg_filtered_net_Cyto.csv -e non_agg_filtered_net_EGAD.csv
+## 121 min
+
+time python ~/my_data/raw_data/practice/GCN/top1_co_occurrence_matrix_version2_TOP420_keeping_ties.py -p HRR.matrix -c non_agg_full_net_Cyto.csv -e non_agg_full_net_EGAD.csv
+
+
+## emapper
+python ../selectMostLengthPEP.py ../transuite.output/pome_TranSuite_output/pome_transfeat/pome_transfeat_coding_pep.fa pomeRTD.coding.pep
+conda activate eggnogmapper
+export EGGNOG_DATA_DIR=/home/myan/my_data/database/eggnog/
+emapper.py -i pomeRTD.coding.pep -o pomeRTD.coding --cpu 24 -m diamond --excel
+```
