@@ -286,4 +286,50 @@ python ../selectMostLengthPEP.py ../transuite.output/pome_TranSuite_output/pome_
 conda activate eggnogmapper
 export EGGNOG_DATA_DIR=/home/myan/my_data/database/eggnog/
 emapper.py -i pomeRTD.coding.pep -o pomeRTD.coding --cpu 24 -m diamond --excel
+
+
+read_tsv("../emapper.output//pomeRTD.coding.emapper.annotations",comment = "##")%>%select(`#query`,`GOs`)%>%filter(GOs!="-")%>%nest(.by="#query")%>%mutate(new_col=m
+    ap(data,myfun))%>%unnest(new_col)%>%select(-data)%>%pivot_longer(!`#query`)%>%select(1,3)%>%magrittr::set_colnames(c("gene_id","GO"))%>%write_tsv("pomeRTD.coding.ge
+    nes.GO.table")
+
+net.dat<-data.table::fread("non_agg_filtered_net_EGAD.csv")%>%column_to_rownames("V1")
+net.dat[net.dat>1] = 1
+
+read_tsv("../emapper.output//pomeRTD.coding.emapper.annotations",comment = "##")%>%select(`#query`,`GOs`)%>%filter(GOs!="-")%>%nest(.by="#query")%>%mutate(new_col=m
+    ap(data,myfun))%>%unnest(new_col)%>%select(-data)%>%pivot_longer(!`#query`)%>%select(1,3)%>%magrittr::set_colnames(c("gene_id","GO")) -> go.table
+
+gene_list<-go.table%>%pull(gene_id)%>%unique()
+go_term<-go.table%>%pull(GO)%>%unique()
+
+anno <- make_annotations(go.table,gene_list,go_term)
+save(anno,file = "anno.Rdata")
+
+GO_groups_voted <- run_GBA(network = net.dat%>%as.matrix(), anno)
+
+
+read_tsv("go.table.txt")%>%mutate(a=1)%>%distinct()%>%pivot_wider(names_from = "GO",values_from = "a")%>%naniar::replace_na_with(0)%>%column_to_rownames("gene_id") 
+    -> anno
+
+GO_groups_voted <- run_GBA(network = net.dat%>%as.matrix(), anno)
+
+GO_groups_voted[[1]]%>%as.data.frame()%>%rownames_to_column()%>%write_tsv("go.auc.txt")
+
+read_tsv("../emapper.output/pomeRTD.coding.emapper.annotations",comment = "##")%>%select(`#query`,KEGG_ko)%>%filter(KEGG_ko!="-")%>%mutate(value=1)%>%pivot_wider(na
+    mes_from = "KEGG_ko",values_from = "value")%>%naniar::replace_na_with(0)%>%column_to_rownames("#query") -> kegg.anno
+kegg_groups_voted <- run_GBA(network = net.dat%>%as.matrix(), kegg.anno)
+
+kegg_groups_voted[[1]]%>%as.data.frame()%>%rownames_to_column()%>%write_tsv("kegg.auc.txt")
+
+data.table::fread("non_agg_filtered_net_Cyto.csv")%>%magrittr::set_colnames(c("from","to","weight")) -> net.dat
+nodes<-c(net.dat %>% pull(from),net.dat %>% pull(to)) %>% unique()
+net_pc<-graph_from_data_frame(
+  d=net.dat,vertices=nodes,
+  directed=TRUE)
+mean(degree(net_pc))
+
+
+makeblastdb -in pomeRTD.coding.pep -dbtype prot -parse_seqids -out pomeRTD.coding.pep.db
+seqkit grep -r -p "ys008G000883" ../../../11.orthofinder/all.genomes/ys.pep.fa -o ys008G000883.pep
+
+net.dat%>%filter(from=="pomeRTD_chr8G014220"|to=="pomeRTD_chr8G014220")%>%write_tsv("pomeRTD_chr8G014220.gene.net.data")
 ```
